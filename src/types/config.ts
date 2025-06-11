@@ -6,20 +6,6 @@ import {
   LocalBrowserProvider,
 } from "@/browser-providers";
 
-export interface LocalBrowserConfig {
-  headless?: boolean;
-  slowMo?: number;
-  devtools?: boolean;
-  args?: string[];
-  executablePath?: string;
-}
-
-export interface HyperbrowserConfig {
-  apiKey?: string;
-  projectId?: string;
-  sessionId?: string;
-}
-
 export type BrowserProviders = "Local" | "Hyperbrowser";
 
 export interface HyperAgentConfig<T extends BrowserProviders = "Local"> {

@@ -10,7 +10,3 @@ export interface AgentCtx {
   variables: Record<string, HyperVariable>;
   llm: BaseChatModel;
 }
-
-export interface AgentContext {
-  variables: Record<string, HyperVariable>;
-}

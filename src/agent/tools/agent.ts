@@ -78,7 +78,7 @@ const runAction = async (
     tokenLimit: ctx.tokenLimit,
     llm: ctx.llm,
     debugDir: ctx.debugDir,
-    variables: ctx.variables,
+    variables: Object.values(ctx.variables),
   };
   const actionType = action.type;
   const actionHandler = getActionHandler(ctx.actions, action.type);

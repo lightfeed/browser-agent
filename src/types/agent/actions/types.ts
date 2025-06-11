@@ -9,7 +9,7 @@ export interface ActionContext {
   domState: DOMState;
   llm: BaseChatModel;
   tokenLimit: number;
-  variables: Record<string, HyperVariable>;
+  variables: HyperVariable[];
   debugDir?: string;
 }
 

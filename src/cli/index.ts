@@ -38,7 +38,6 @@ program
   .option("-d, --debug", "Enable debug mode")
   .option("-c, --command <task description>", "Command to run")
   .option("-f, --file <file path>", "Path to a file containing a command")
-  .option("-m, --mcp <mcp config file>", "Path to a file containing mcp config")
   .option("--hyperbrowser", "Use Hyperbrowser for the browser provider")
   .action(async function () {
     const options = this.opts();
@@ -46,7 +45,6 @@ program
     const useHB = (options.hyperbrowser as boolean) || false;
     let taskDescription = (options.command as string) || undefined;
     const filePath = (options.file as string) || undefined;
-    const mcpPath = (options.mcp as string) || undefined;
 
     console.log(chalk.blue("HyperAgent CLI"));
     currentSpinner.info(
@@ -271,13 +269,6 @@ program
             required: true,
           });
         }
-      }
-
-      if (mcpPath) {
-        const mcpConfig = JSON.parse(
-          (await fs.promises.readFile(mcpPath)).toString()
-        );
-        await agent.initializeMCPClient({ servers: mcpConfig });
       }
 
       if (useHB && !debug) {

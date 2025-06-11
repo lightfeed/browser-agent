@@ -41,7 +41,6 @@
     "@hyperbrowser/sdk": "^0.46.0",
     "@inquirer/prompts": "^7.4.1",
     "@langchain/core": "^0.3.43",
-    "@modelcontextprotocol/sdk": "^1.9.0",
     "@types/crypto-js": "^4.2.2",
     "boxen": "5.1.2",
     "chalk": "4.1.2",

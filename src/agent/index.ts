@@ -3,12 +3,7 @@ import { ChatOpenAI } from "@langchain/openai";
 import { Browser, BrowserContext, Page } from "playwright";
 import { v4 as uuidv4 } from "uuid";
 
-import {
-  BrowserProviders,
-  HyperAgentConfig,
-  MCPConfig,
-  MCPServerConfig,
-} from "@/types/config";
+import { BrowserProviders, HyperAgentConfig } from "@/types/config";
 import {
   ActionType,
   AgentActionDefinition,
@@ -29,7 +24,6 @@ import {
   LocalBrowserProvider,
 } from "../browser-providers";
 import { HyperagentError } from "./error";
-import { MCPClient } from "./mcp/client";
 import { runAgentTask } from "./tools/agent";
 import { HyperPage, HyperVariable } from "@/types/agent/types";
 import { z } from "zod";
@@ -40,7 +34,6 @@ export class HyperAgent<T extends BrowserProviders = "Local"> {
   private tasks: Record<string, TaskState> = {};
   private tokenLimit = 128000;
   private debug = false;
-  private mcpClient: MCPClient | undefined;
   private browserProvider: T extends "Hyperbrowser"
     ? HyperbrowserProvider
     : LocalBrowserProvider;
@@ -236,11 +229,6 @@ export class HyperAgent<T extends BrowserProviders = "Local"> {
       }
     }
 
-    if (this.mcpClient) {
-      await this.mcpClient.disconnect();
-      this.mcpClient = undefined;
-    }
-
     if (this.browser) {
       await this.browserProvider.close();
       this.browser = null;
@@ -329,7 +317,6 @@ export class HyperAgent<T extends BrowserProviders = "Local"> {
         actions: this.getActions(params?.outputSchema),
         tokenLimit: this.tokenLimit,
         debug: this.debug,
-        mcpClient: this.mcpClient,
         variables: this._variables,
       },
       taskState,
@@ -379,7 +366,6 @@ export class HyperAgent<T extends BrowserProviders = "Local"> {
           actions: this.getActions(params?.outputSchema),
           tokenLimit: this.tokenLimit,
           debug: this.debug,
-          mcpClient: this.mcpClient,
           variables: this._variables,
         },
         taskState,
@@ -412,126 +398,6 @@ export class HyperAgent<T extends BrowserProviders = "Local"> {
     } else {
       this.actions.push(action);
     }
-  }
-
-  /**
-   * Initialize the MCP client with the given configuration
-   * @param config The MCP configuration
-   */
-  public async initializeMCPClient(config: MCPConfig): Promise<void> {
-    if (!config || config.servers.length === 0) {
-      return;
-    }
-    this.mcpClient = new MCPClient(this.debug);
-    try {
-      for (const serverConfig of config.servers) {
-        try {
-          const { serverId, actions } =
-            await this.mcpClient.connectToServer(serverConfig);
-          for (const action of actions) {
-            this.registerAction(action);
-          }
-          console.log(`MCP server ${serverId} initialized successfully`);
-        } catch (error) {
-          console.error(
-            `Failed to initialize MCP server ${serverConfig.id || "unknown"}:`,
-            error
-          );
-        }
-      }
-
-      const serverIds = this.mcpClient.getServerIds();
-      console.log(`Successfully connected to ${serverIds.length} MCP servers`);
-    } catch (error) {
-      console.error("Failed to initialize MCP client:", error);
-      this.mcpClient = undefined;
-    }
-  }
-
-  /**
-   * Connect to an MCP server at runtime
-   * @param serverConfig Configuration for the MCP server
-   * @returns Server ID if connection was successful
-   */
-  public async connectToMCPServer(
-    serverConfig: MCPServerConfig
-  ): Promise<string | null> {
-    if (!this.mcpClient) {
-      this.mcpClient = new MCPClient(this.debug);
-    }
-
-    try {
-      const { serverId, actions } =
-        await this.mcpClient.connectToServer(serverConfig);
-
-      // Register the actions from this server
-      for (const action of actions) {
-        this.registerAction(action);
-      }
-
-      console.log(`Connected to MCP server with ID: ${serverId}`);
-      return serverId;
-    } catch (error) {
-      console.error(`Failed to connect to MCP server:`, error);
-      return null;
-    }
-  }
-
-  /**
-   * Disconnect from a specific MCP server
-   * @param serverId ID of the server to disconnect from
-   * @returns Boolean indicating if the disconnection was successful
-   */
-  public disconnectFromMCPServer(serverId: string): boolean {
-    if (!this.mcpClient) {
-      return false;
-    }
-
-    try {
-      this.mcpClient.disconnectServer(serverId);
-      return true;
-    } catch (error) {
-      console.error(`Failed to disconnect from MCP server ${serverId}:`, error);
-      return false;
-    }
-  }
-
-  /**
-   * Check if a specific MCP server is connected
-   * @param serverId ID of the server to check
-   * @returns Boolean indicating if the server is connected
-   */
-  public isMCPServerConnected(serverId: string): boolean {
-    if (!this.mcpClient) {
-      return false;
-    }
-    return this.mcpClient.getServerIds().includes(serverId);
-  }
-
-  /**
-   * Get all connected MCP server IDs
-   * @returns Array of server IDs
-   */
-  public getMCPServerIds(): string[] {
-    if (!this.mcpClient) {
-      return [];
-    }
-    return this.mcpClient.getServerIds();
-  }
-
-  /**
-   * Get information about all connected MCP servers
-   * @returns Array of server information objects or null if no MCP client is initialized
-   */
-  public getMCPServerInfo(): Array<{
-    id: string;
-    toolCount: number;
-    toolNames: string[];
-  }> | null {
-    if (!this.mcpClient) {
-      return null;
-    }
-    return this.mcpClient.getServerInfo();
   }
 
   /**

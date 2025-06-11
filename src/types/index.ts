@@ -21,7 +21,7 @@ import {
 } from "./agent/types";
 
 // Config Types
-import { MCPServerConfig, MCPConfig, HyperAgentConfig } from "./config";
+import { HyperAgentConfig } from "./config";
 
 // Browser Provider Types
 import BrowserProvider from "./browser-providers/types";
@@ -46,8 +46,6 @@ export {
   TaskState,
 
   // Config Types
-  MCPServerConfig,
-  MCPConfig,
   HyperAgentConfig,
 
   // Browser Provider Types

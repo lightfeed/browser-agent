@@ -10,7 +10,7 @@ const agent = new HyperAgent({
 
 (async () => {
   const control = await agent.executeTaskAsync(
-    "Go to give me a summary of the second link on the second page of the show section of hacker news, be sure to actually go to it",
+    "Go to next page of https://www.loblaws.ca/en/food/bakery/bread/c/28251",
     {
       onStep: (step) => {
         console.log("\n" + chalk.cyan.bold("===== STEP ====="));

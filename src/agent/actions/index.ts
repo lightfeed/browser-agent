@@ -34,7 +34,7 @@ const DEFAULT_ACTIONS = [
   PageBackActionDefinition,
   PageForwardActionDefinition,
   RefreshPageActionDefinition,
-  ExtractActionDefinition,
+  // ExtractActionDefinition,
   ClickElementActionDefinition,
   SelectOptionActionDefinition,
   ScrollActionDefinition,

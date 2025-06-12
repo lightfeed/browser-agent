@@ -34,6 +34,7 @@ const DEFAULT_ACTIONS = [
   PageBackActionDefinition,
   PageForwardActionDefinition,
   RefreshPageActionDefinition,
+  // --- Extract is handled out of the agent - for now the agent is only supposed to do AI navigation
   // ExtractActionDefinition,
   ClickElementActionDefinition,
   SelectOptionActionDefinition,

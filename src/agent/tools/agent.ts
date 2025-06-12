@@ -48,6 +48,8 @@ const compositeScreenshot = async (page: Page, overlay: string) => {
   // Extract base64 from data URL (remove "data:image/png;base64," prefix)
   const base64Result = mergedImage.split(",")[1];
 
+  console.log("base64Result", base64Result);
+
   return base64Result;
 };
 

@@ -27,10 +27,17 @@ export const AgentOutputFn = (
 
 export type AgentOutput = z.infer<ReturnType<typeof AgentOutputFn>>;
 
+export interface TokenUsage {
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+}
+
 export interface AgentStep {
   idx: number;
   agentOutput: AgentOutput;
   actionOutputs: ActionOutput[];
+  tokenUsage?: TokenUsage;
 }
 
 export interface TaskParams {

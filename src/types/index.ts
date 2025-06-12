@@ -17,6 +17,7 @@ import {
   Task,
   TaskStatus,
   TaskState,
+  TokenUsage,
   endTaskStatuses,
 } from "./agent/types";
 
@@ -44,6 +45,7 @@ export {
   Task,
   TaskStatus,
   TaskState,
+  TokenUsage,
 
   // Config Types
   HyperAgentConfig,

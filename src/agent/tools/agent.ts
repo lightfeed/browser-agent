@@ -30,6 +30,34 @@ import { ActionNotFoundError } from "../actions";
 import { AgentCtx } from "./types";
 import mergeImages from "merge-images";
 import { Canvas, Image } from "canvas";
+import { BaseCallbackHandler } from "@langchain/core/callbacks/base";
+import { LLMResult } from "@langchain/core/outputs";
+import { TokenUsage } from "@/types/agent/types";
+
+class TokenTrackingCallbackHandler extends BaseCallbackHandler {
+  name = "TokenTrackingCallbackHandler";
+  private tokenUsage: TokenUsage | null = null;
+
+  handleLLMEnd(output: LLMResult): void {
+    // Extract token usage from the LLM result
+    const usage = output.llmOutput?.tokenUsage;
+    if (usage) {
+      this.tokenUsage = {
+        inputTokens: usage.promptTokens || 0,
+        outputTokens: usage.completionTokens || 0,
+        totalTokens: usage.totalTokens || 0,
+      };
+    }
+  }
+
+  getTokenUsage(): TokenUsage | null {
+    return this.tokenUsage;
+  }
+
+  reset(): void {
+    this.tokenUsage = null;
+  }
+}
 
 const compositeScreenshot = async (page: Page, overlay: string) => {
   // Take screenshot and convert to base64
@@ -205,10 +233,16 @@ export const runAgentTask = async (
       );
     }
 
-    // Invoke LLM
+    // Create token tracking callback handler
+    const tokenTracker = new TokenTrackingCallbackHandler();
+
+    // Invoke LLM with token tracking
     const agentOutput = await retry({
-      func: () => llmStructured.invoke(msgs),
+      func: () => llmStructured.invoke(msgs, { callbacks: [tokenTracker] }),
     });
+
+    // Get token usage from the callback handler
+    const tokenUsage = tokenTracker.getTokenUsage();
 
     params?.debugOnAgentOutput?.(agentOutput);
 
@@ -251,6 +285,7 @@ export const runAgentTask = async (
       idx: currStep,
       agentOutput: agentOutput,
       actionOutputs,
+      tokenUsage: tokenUsage || undefined,
     };
     taskState.steps.push(step);
     await params?.onStep?.(step);

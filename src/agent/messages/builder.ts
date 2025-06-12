@@ -15,7 +15,7 @@ export const buildAgentStepMessages = async (
   screenshot: string,
   variables: HyperVariable[]
 ): Promise<BaseMessageLike[]> => {
-  const messages = []; //[...baseMessages];
+  const messages = [...baseMessages];
 
   // Add the final goal section
   messages.push({

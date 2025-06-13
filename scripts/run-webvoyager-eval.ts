@@ -293,11 +293,6 @@ const runEval = async (
   });
   const agent = new BrowserAgent({
     llm: llm,
-    hyperbrowserConfig: {
-      hyperbrowserSessionOptions: {
-        screen: { width: 1500, height: 1500 },
-      },
-    },
     debug: true,
   });
   try {

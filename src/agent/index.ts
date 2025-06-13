@@ -430,12 +430,12 @@ export class BrowserAgent<T extends BrowserProviders = "Local"> {
   }
 
   private setupAgentPage(page: Page): AgentPage {
-    const hyperPage = page as AgentPage;
-    hyperPage.ai = (task: string, params?: TaskParams) =>
+    const agentPage = page as AgentPage;
+    agentPage.ai = (task: string, params?: TaskParams) =>
       this.executeTask(task, params, page);
-    hyperPage.aiAsync = (task: string, params?: TaskParams) =>
+    agentPage.aiAsync = (task: string, params?: TaskParams) =>
       this.executeTaskAsync(task, params, page);
-    hyperPage.extract = async (task, outputSchema) => {
+    agentPage.extract = async (task, outputSchema) => {
       if (!task && !outputSchema) {
         throw new BrowserAgentError(
           "No task description or output schema specified",
@@ -464,6 +464,6 @@ export class BrowserAgent<T extends BrowserProviders = "Local"> {
         return JSON.parse(res.output as string);
       }
     };
-    return hyperPage;
+    return agentPage;
   }
 }

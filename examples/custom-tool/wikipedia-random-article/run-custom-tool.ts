@@ -24,7 +24,7 @@
  */
 
 import "dotenv/config";
-import { BrowserAgent } from "@lightfeed/browser-agent";
+import { BrowserAgent } from "../../../src/agent";
 import {
   AgentActionDefinition,
   ActionContext,

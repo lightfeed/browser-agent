@@ -42,12 +42,12 @@
  */
 
 import "dotenv/config";
-import BrowserAgent from "@hyperbrowser/agent";
+import BrowserAgent from "@lightfeed/browser-agent";
 import {
   AgentActionDefinition,
   ActionContext,
   ActionOutput,
-} from "@hyperbrowser/agent/types";
+} from "@lightfeed/browser-agent/types";
 import chalk from "chalk";
 import { ChatOpenAI } from "@langchain/openai";
 import Exa from "exa-js";

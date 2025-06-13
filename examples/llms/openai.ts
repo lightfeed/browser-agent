@@ -24,7 +24,7 @@
  */
 
 import "dotenv/config";
-import BrowserAgent from "@hyperbrowser/agent";
+import BrowserAgent from "@lightfeed/browser-agent";
 
 import chalk from "chalk";
 import { ChatOpenAI } from "@langchain/openai";

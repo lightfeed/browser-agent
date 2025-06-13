@@ -11,13 +11,13 @@ import { getDom } from "@/context-providers/dom";
 import { retry } from "@/utils/retry";
 import { sleep } from "@/utils/sleep";
 
-import { AgentOutputFn, endTaskStatuses } from "@hyperbrowser/agent/types";
+import { AgentOutputFn, endTaskStatuses } from "@/types/agent/types";
 import {
   TaskParams,
   TaskOutput,
   TaskState,
   TaskStatus,
-} from "@hyperbrowser/agent/types";
+} from "@/types/agent/types";
 
 import { BrowserAgentError } from "../error";
 import { buildAgentStepMessages } from "../messages/builder";

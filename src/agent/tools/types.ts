@@ -5,7 +5,7 @@ import { HyperVariable } from "@/types/agent/types";
 export interface AgentCtx {
   debugDir?: string;
   debug?: boolean;
-  actions: AgentActionDefinition[];
+  actions: Array<AgentActionDefinition>;
   tokenLimit: number;
   variables: Record<string, HyperVariable>;
   llm: BaseChatModel;

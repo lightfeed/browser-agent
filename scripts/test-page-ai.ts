@@ -4,7 +4,11 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const agent = new BrowserAgent({
-  browserProvider: "Serverless",
+  browserProvider: "Remote",
+  remoteConfig: {
+    wsEndpoint: process.env.REMOTE_BROWSER_WS_ENDPOINT,
+  },
+  debug: true,
 });
 
 (async () => {

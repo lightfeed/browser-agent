@@ -1,6 +1,6 @@
 # Serverless Browser Agent ⚡️
 
-A powerful AI agent that can automatically navigate and interact with serverless web browsers using natural language prompts. This project is a fork of [HyperAgent](https://github.com/hyperbrowserai/HyperAgent) with additional features for serverless and remote browser support.
+Use AI to navigate and interact with web browsers in serverless platforms. This project is a fork of [HyperAgent](https://github.com/hyperbrowserai/HyperAgent) with additional features for serverless and remote browser support.
 
 ## Installation
 

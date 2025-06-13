@@ -233,7 +233,6 @@ export const runAgentTask = async (
 
     // Create token tracking callback handler
     const tokenTracker = new TokenTrackingCallbackHandler();
-    console.log("msgs before invoke", msgs);
 
     // Invoke LLM with token tracking
     const agentOutput = await retry({

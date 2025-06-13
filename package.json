@@ -1,7 +1,7 @@
 {
-  "name": "@hyperbrowser/agent",
-  "version": "0.3.1",
-  "description": "Hyperbrowsers Web Agent",
+  "name": "@lightfeed/browser-agent",
+  "version": "0.1.0",
+  "description": "Serverless browser agent",
   "author": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -18,7 +18,7 @@
     "example": "npx ts-node -r tsconfig-paths/register"
   },
   "bin": {
-    "hyperagent-cli": "cli.sh"
+    "browser-agent-cli": "cli.sh"
   },
   "files": [
     "dist",

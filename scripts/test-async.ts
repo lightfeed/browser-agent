@@ -1,10 +1,10 @@
-import { HyperAgent } from "../src/agent";
+import { BrowserAgent } from "../src/agent";
 import dotenv from "dotenv";
 import chalk from "chalk";
 
 dotenv.config();
 
-const agent = new HyperAgent({
+const agent = new BrowserAgent({
   // a: process.env.OPENAI_API_KEY,
 });
 

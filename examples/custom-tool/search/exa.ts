@@ -1,11 +1,11 @@
 /**
  * # Custom Search Tool Example with Exa
- * 
- * This example demonstrates how to create and use a custom search tool with HyperAgent
+ *
+ * This example demonstrates how to create and use a custom search tool with BrowserAgent
  * using the Exa search API to perform web searches and process the results.
- * 
+ *
  * ## What This Example Does
- * 
+ *
  * The agent performs a multi-step task that showcases custom tool integration:
  * 1. Defines a custom search action using the Exa API
  * 2. Creates a schema for the search parameters using Zod
@@ -15,39 +15,39 @@
  *    - Analyzes search results and filters for relevance
  *    - Navigates to selected URLs to extract detailed information
  *    - Compiles recommendations based on uniqueness and frequency
- * 
+ *
  * ## Prerequisites
- * 
+ *
  * 1. Node.js environment
  * 2. OpenAI API key set in your .env file (OPENAI_API_KEY)
  * 3. Exa API key set in your .env file (EXA_API_KEY)
- * 
+ *
  * ## Custom Tool Configuration
- * 
+ *
  * The example includes:
  * - Custom search action definition with Zod schema validation
  * - Integration with Exa search API
  * - Formatted result output with relevance scoring
- * 
+ *
  * ## Running the Example
- * 
+ *
  * ```bash
  * yarn ts-node -r tsconfig-paths/register examples/custom-tool/search/exa.ts
  * ```
- * 
+ *
  * ## Example Output
- * 
+ *
  * The final output will include a detailed trip plan for Tokyo based on
  * searched and analyzed web content, with recommended places and their details.
  */
 
 import "dotenv/config";
-import HyperAgent from "@hyperbrowser/agent";
+import BrowserAgent from "@lightfeed/browser-agent";
 import {
   AgentActionDefinition,
   ActionContext,
   ActionOutput,
-} from "@hyperbrowser/agent/types";
+} from "@lightfeed/browser-agent/types";
 import chalk from "chalk";
 import { ChatOpenAI } from "@langchain/openai";
 import Exa from "exa-js";
@@ -95,7 +95,7 @@ async function runEval() {
     model: "gpt-4o",
   });
 
-  const agent = new HyperAgent({
+  const agent = new BrowserAgent({
     llm: llm,
     debug: true,
     customActions: [RunSearchActionDefinition],

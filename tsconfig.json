@@ -10,13 +10,13 @@
     "declaration": true,
     "outDir": "./dist",
     "paths": {
-      "@hyperbrowser/agent": [
+      "@lightfeed/browser-agent": [
         "./src/index"
       ],
-      "@hyperbrowser/agent/types": [
+      "@lightfeed/browser-agent/types": [
         "./src/types/index"
       ],
-      "@hyperbrowser/agent/custom-actions": [
+      "@lightfeed/browser-agent/custom-actions": [
         "./src/custom-actions/index"
       ],
       "@/*": [

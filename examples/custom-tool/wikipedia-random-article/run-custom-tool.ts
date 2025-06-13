@@ -1,35 +1,35 @@
 /**
  * # Custom Wikipedia Random Article Tool Example
- * 
- * This example demonstrates how to create a simple custom tool for HyperAgent
+ *
+ * This example demonstrates how to create a simple custom tool for BrowserAgent
  * that navigates to random Wikipedia articles and extracts their content.
- * 
+ *
  * ## What This Example Does
- * 
+ *
  * The agent performs a straightforward task using a custom tool that:
  * 1. Defines a custom action to navigate to Wikipedia's random article page
  * 2. Retrieves the page title and URL
  * 3. Extracts and describes the content of the randomly selected article
- * 
+ *
  * ## Prerequisites
- * 
+ *
  * 1. Node.js environment
  * 2. OpenAI API key set in your .env file (OPENAI_API_KEY)
- * 
+ *
  * ## Running the Example
- * 
+ *
  * ```bash
  * yarn ts-node -r tsconfig-paths/register examples/custom-tool/wikipedia-random-article/run-custom-tool.ts
  * ```
  */
 
 import "dotenv/config";
-import { HyperAgent } from "@hyperbrowser/agent";
+import { BrowserAgent } from "../../../src/agent";
 import {
   AgentActionDefinition,
   ActionContext,
   ActionOutput,
-} from "@hyperbrowser/agent/types";
+} from "@lightfeed/browser-agent/types";
 import chalk from "chalk";
 import { ChatOpenAI } from "@langchain/openai";
 
@@ -64,7 +64,7 @@ async function runEval() {
     model: "gpt-4o",
   });
 
-  const agent = new HyperAgent({
+  const agent = new BrowserAgent({
     llm: llm,
     debug: true,
     customActions: [GoToWikipediaActionDefinition],

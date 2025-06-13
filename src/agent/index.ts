@@ -3,7 +3,7 @@ import { ChatOpenAI } from "@langchain/openai";
 import { Browser, BrowserContext, Page } from "playwright";
 import { v4 as uuidv4 } from "uuid";
 
-import { BrowserProviders, HyperAgentConfig } from "@/types/config";
+import { BrowserProviders, BrowserAgentConfig } from "@/types/config";
 import {
   ActionType,
   AgentActionDefinition,
@@ -24,13 +24,13 @@ import {
   ServerlessBrowserProvider,
   RemoteBrowserProvider,
 } from "../browser-providers";
-import { HyperagentError } from "./error";
+import { BrowserAgentError } from "./error";
 import { runAgentTask } from "./tools/agent";
-import { HyperPage, HyperVariable } from "@/types/agent/types";
+import { AgentPage, AgentVariable } from "@/types/agent/types";
 import { z } from "zod";
 import { ErrorEmitter } from "@/utils";
 
-export class HyperAgent<T extends BrowserProviders = "Local"> {
+export class BrowserAgent<T extends BrowserProviders = "Local"> {
   private llm: BaseChatModel;
   private tasks: Record<string, TaskState> = {};
   private tokenLimit = 128000;
@@ -46,12 +46,12 @@ export class HyperAgent<T extends BrowserProviders = "Local"> {
   public browser: Browser | null = null;
   public context: BrowserContext | null = null;
   private _currentPage: Page | null = null;
-  private _variables: Record<string, HyperVariable> = {};
+  private _variables: Record<string, AgentVariable> = {};
   private errorEmitter: ErrorEmitter;
 
-  public get currentPage(): HyperPage | null {
+  public get currentPage(): AgentPage | null {
     if (this._currentPage) {
-      return this.setupHyperPage(this._currentPage);
+      return this.setupAgentPage(this._currentPage);
     }
     return null;
   }
@@ -60,7 +60,7 @@ export class HyperAgent<T extends BrowserProviders = "Local"> {
     this._currentPage = page;
   }
 
-  constructor(params: HyperAgentConfig<T> = {}) {
+  constructor(params: BrowserAgentConfig<T> = {}) {
     if (!params.llm) {
       if (process.env.OPENAI_API_KEY) {
         this.llm = new ChatOpenAI({
@@ -69,7 +69,7 @@ export class HyperAgent<T extends BrowserProviders = "Local"> {
           temperature: 0,
         });
       } else {
-        throw new HyperagentError("No LLM provider provided", 400);
+        throw new BrowserAgentError("No LLM provider provided", 400);
       }
     } else {
       this.llm = params.llm;
@@ -165,7 +165,7 @@ export class HyperAgent<T extends BrowserProviders = "Local"> {
    * Get all variables
    * @returns Record of variables
    */
-  public getVariables(): Record<string, HyperVariable> {
+  public getVariables(): Record<string, AgentVariable> {
     return this._variables;
   }
 
@@ -174,7 +174,7 @@ export class HyperAgent<T extends BrowserProviders = "Local"> {
    * @param key Key of the variable
    * @param value Value of the variable
    */
-  public addVariable(variable: HyperVariable): void {
+  public addVariable(variable: AgentVariable): void {
     this._variables[variable.key] = variable;
   }
 
@@ -183,7 +183,7 @@ export class HyperAgent<T extends BrowserProviders = "Local"> {
    * @param key Key of the variable
    * @returns Value of the variable
    */
-  public getVariable(key: string): HyperVariable | undefined {
+  public getVariable(key: string): AgentVariable | undefined {
     return this._variables[key];
   }
 
@@ -197,31 +197,31 @@ export class HyperAgent<T extends BrowserProviders = "Local"> {
 
   /**
    * Get all pages in the context
-   * @returns Array of HyperPage objects
+   * @returns Array of AgentPage objects
    */
-  public async getPages(): Promise<HyperPage[]> {
+  public async getPages(): Promise<AgentPage[]> {
     if (!this.browser) {
       await this.initBrowser();
     }
     if (!this.context) {
-      throw new HyperagentError("No context found");
+      throw new BrowserAgentError("No context found");
     }
-    return this.context.pages().map(this.setupHyperPage.bind(this), this);
+    return this.context.pages().map(this.setupAgentPage.bind(this), this);
   }
 
   /**
    * Create a new page in the context
-   * @returns HyperPage object
+   * @returns AgentPage object
    */
-  public async newPage(): Promise<HyperPage> {
+  public async newPage(): Promise<AgentPage> {
     if (!this.browser) {
       await this.initBrowser();
     }
     if (!this.context) {
-      throw new HyperagentError("No context found");
+      throw new BrowserAgentError("No context found");
     }
     const page = await this.context.newPage();
-    return this.setupHyperPage(page);
+    return this.setupAgentPage(page);
   }
 
   /**
@@ -251,12 +251,12 @@ export class HyperAgent<T extends BrowserProviders = "Local"> {
       await this.initBrowser();
     }
     if (!this.context) {
-      throw new HyperagentError("No context found");
+      throw new BrowserAgentError("No context found");
     }
     if (!this.currentPage || this.currentPage.isClosed()) {
       this._currentPage = await this.context.newPage();
 
-      return this.setupHyperPage(this._currentPage);
+      return this.setupAgentPage(this._currentPage);
     }
     return this.currentPage;
   }
@@ -269,7 +269,7 @@ export class HyperAgent<T extends BrowserProviders = "Local"> {
   private getTaskControl(taskId: string): Task {
     const taskState = this.tasks[taskId];
     if (!taskState) {
-      throw new HyperagentError(`Task ${taskId} not found`);
+      throw new BrowserAgentError(`Task ${taskId} not found`);
     }
     return {
       getStatus: () => taskState.status,
@@ -389,7 +389,7 @@ export class HyperAgent<T extends BrowserProviders = "Local"> {
    */
   private async registerAction(action: AgentActionDefinition) {
     if (action.type === "complete") {
-      throw new HyperagentError(
+      throw new BrowserAgentError(
         "Could not add an action with the name 'complete'. Complete is a reserved action.",
         400
       );
@@ -429,15 +429,15 @@ export class HyperAgent<T extends BrowserProviders = "Local"> {
     return session;
   }
 
-  private setupHyperPage(page: Page): HyperPage {
-    const hyperPage = page as HyperPage;
-    hyperPage.ai = (task: string, params?: TaskParams) =>
+  private setupAgentPage(page: Page): AgentPage {
+    const agentPage = page as AgentPage;
+    agentPage.ai = (task: string, params?: TaskParams) =>
       this.executeTask(task, params, page);
-    hyperPage.aiAsync = (task: string, params?: TaskParams) =>
+    agentPage.aiAsync = (task: string, params?: TaskParams) =>
       this.executeTaskAsync(task, params, page);
-    hyperPage.extract = async (task, outputSchema) => {
+    agentPage.extract = async (task, outputSchema) => {
       if (!task && !outputSchema) {
-        throw new HyperagentError(
+        throw new BrowserAgentError(
           "No task description or output schema specified",
           400
         );
@@ -464,6 +464,6 @@ export class HyperAgent<T extends BrowserProviders = "Local"> {
         return JSON.parse(res.output as string);
       }
     };
-    return hyperPage;
+    return agentPage;
   }
 }

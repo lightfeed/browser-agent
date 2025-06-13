@@ -11,15 +11,15 @@ import { getDom } from "@/context-providers/dom";
 import { retry } from "@/utils/retry";
 import { sleep } from "@/utils/sleep";
 
-import { AgentOutputFn, endTaskStatuses } from "@hyperbrowser/agent/types";
+import { AgentOutputFn, endTaskStatuses } from "@/types/agent/types";
 import {
   TaskParams,
   TaskOutput,
   TaskState,
   TaskStatus,
-} from "@hyperbrowser/agent/types";
+} from "@/types/agent/types";
 
-import { HyperagentError } from "../error";
+import { BrowserAgentError } from "../error";
 import { buildAgentStepMessages } from "../messages/builder";
 import { getStructuredOutputMethod } from "../llms/structured-output";
 import { SYSTEM_PROMPT } from "../messages/system-prompt";
@@ -149,12 +149,12 @@ export const runAgentTask = async (
     console.log(`Debugging task ${taskId} in ${debugDir}`);
   }
   if (!taskState) {
-    throw new HyperagentError(`Task ${taskId} not found`);
+    throw new BrowserAgentError(`Task ${taskId} not found`);
   }
 
   taskState.status = TaskStatus.RUNNING as TaskStatus;
   if (!ctx.llm) {
-    throw new HyperagentError("LLM not initialized");
+    throw new BrowserAgentError("LLM not initialized");
   }
   const llmStructured = ctx.llm.withStructuredOutput(
     AgentOutputFn(getActionSchema(ctx.actions)),

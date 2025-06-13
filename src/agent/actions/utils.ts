@@ -1,4 +1,4 @@
-import { ActionContext } from "@hyperbrowser/agent/types";
+import { ActionContext } from "@lightfeed/browser-agent/types";
 
 export function getLocator(ctx: ActionContext, index: number) {
   const element = ctx.domState.elements.get(index);

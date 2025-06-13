@@ -4,7 +4,7 @@ import { Page } from "playwright";
 import { getScrollInfo } from "./utils";
 import { retry } from "@/utils/retry";
 import { DOMState } from "@/context-providers/dom/types";
-import { HyperVariable } from "@/types/agent/types";
+import { AgentVariable } from "@/types/agent/types";
 
 export const buildAgentStepMessages = async (
   baseMessages: BaseMessageLike[],
@@ -13,7 +13,7 @@ export const buildAgentStepMessages = async (
   page: Page,
   domState: DOMState,
   screenshot: string,
-  variables: HyperVariable[]
+  variables: AgentVariable[]
 ): Promise<BaseMessageLike[]> => {
   const messages = [...baseMessages];
 

@@ -1,13 +1,13 @@
 /**
  * # OpenAI LLM Integration Example
  *
- * This example demonstrates how to configure and use HyperAgent with OpenAI's
+ * This example demonstrates how to configure and use BrowserAgent with OpenAI's
  * language models for web automation tasks.
  *
  * ## What This Example Does
  *
  * The agent performs a web scraping task that:
- * 1. Configures HyperAgent with OpenAI's GPT-4 model
+ * 1. Configures BrowserAgent with OpenAI's GPT-4 model
  * 2. Navigates to Hacker News
  * 3. Searches for and extracts information about "Show HN" posts
  *
@@ -24,7 +24,7 @@
  */
 
 import "dotenv/config";
-import HyperAgent from "@hyperbrowser/agent";
+import BrowserAgent from "@lightfeed/browser-agent";
 
 import chalk from "chalk";
 import { ChatOpenAI } from "@langchain/openai";
@@ -38,7 +38,7 @@ async function runEval() {
     model: "gpt-4o",
   });
 
-  const agent = new HyperAgent({
+  const agent = new BrowserAgent({
     llm: llm,
     debug: true,
   });

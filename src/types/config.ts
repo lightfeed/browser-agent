@@ -9,7 +9,7 @@ import {
 
 export type BrowserProviders = "Local" | "Serverless" | "Remote";
 
-export interface HyperAgentConfig<T extends BrowserProviders = "Local"> {
+export interface BrowserAgentConfig<T extends BrowserProviders = "Local"> {
   customActions?: Array<AgentActionDefinition>;
 
   browserProvider?: T;

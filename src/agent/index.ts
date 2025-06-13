@@ -22,6 +22,7 @@ import {
 import {
   HyperbrowserProvider,
   LocalBrowserProvider,
+  ServerlessBrowserProvider,
 } from "../browser-providers";
 import { HyperagentError } from "./error";
 import { runAgentTask } from "./tools/agent";
@@ -36,7 +37,9 @@ export class HyperAgent<T extends BrowserProviders = "Local"> {
   private debug = false;
   private browserProvider: T extends "Hyperbrowser"
     ? HyperbrowserProvider
-    : LocalBrowserProvider;
+    : T extends "Serverless"
+      ? ServerlessBrowserProvider
+      : LocalBrowserProvider;
   private browserProviderType: T;
   private actions: Array<AgentActionDefinition> = [...DEFAULT_ACTIONS];
 
@@ -79,8 +82,14 @@ export class HyperAgent<T extends BrowserProviders = "Local"> {
             ...(params.hyperbrowserConfig ?? {}),
             debug: params.debug,
           })
-        : new LocalBrowserProvider(params.localConfig)
-    ) as T extends "Hyperbrowser" ? HyperbrowserProvider : LocalBrowserProvider;
+        : this.browserProviderType === "Serverless"
+          ? new ServerlessBrowserProvider(params.serverlessConfig!)
+          : new LocalBrowserProvider(params.localConfig)
+    ) as T extends "Hyperbrowser"
+      ? HyperbrowserProvider
+      : T extends "Serverless"
+        ? ServerlessBrowserProvider
+        : LocalBrowserProvider;
 
     if (params.customActions) {
       params.customActions.forEach(this.registerAction, this);

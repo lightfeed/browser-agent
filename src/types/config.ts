@@ -4,9 +4,10 @@ import { AgentActionDefinition } from "./agent/actions/types";
 import {
   HyperbrowserProvider,
   LocalBrowserProvider,
+  ServerlessBrowserProvider,
 } from "@/browser-providers";
 
-export type BrowserProviders = "Local" | "Hyperbrowser";
+export type BrowserProviders = "Local" | "Hyperbrowser" | "Serverless";
 
 export interface HyperAgentConfig<T extends BrowserProviders = "Local"> {
   customActions?: Array<AgentActionDefinition>;
@@ -21,4 +22,5 @@ export interface HyperAgentConfig<T extends BrowserProviders = "Local"> {
     "debug"
   >;
   localConfig?: ConstructorParameters<typeof LocalBrowserProvider>[0];
+  serverlessConfig?: ConstructorParameters<typeof ServerlessBrowserProvider>[0];
 }

@@ -1,30 +1,30 @@
 /**
  * # Simple Amazon Cart Example
- * 
- * This example demonstrates how to use HyperAgent to automate a basic
+ *
+ * This example demonstrates how to use BrowserAgent to automate a basic
  * e-commerce task on Amazon.com.
- * 
+ *
  * ## What This Example Does
- * 
+ *
  * The agent performs a simple shopping task that:
  * 1. Navigates to Amazon.com
  * 2. Searches for a specific product
  * 3. Adds an item to the cart that matches the specific requirements (only a single item)
- * 
+ *
  * ## Prerequisites
- * 
+ *
  * 1. Node.js environment
  * 2. OpenAI API key set in your .env file (OPENAI_API_KEY)
- * 
+ *
  * ## Running the Example
- * 
+ *
  * ```bash
  * yarn ts-node -r tsconfig-paths/register examples/simple/add-to-amazon-cart.ts
  * ```
  */
 
 import "dotenv/config";
-import { HyperAgent } from "@hyperbrowser/agent";
+import { BrowserAgent } from "@hyperbrowser/agent";
 import chalk from "chalk";
 import { ChatOpenAI } from "@langchain/openai";
 
@@ -36,7 +36,7 @@ async function runEval() {
     model: "gpt-4o",
   });
 
-  const agent = new HyperAgent({
+  const agent = new BrowserAgent({
     llm: llm,
   });
 

@@ -1,13 +1,13 @@
-import { HyperAgent } from "./agent";
+import { BrowserAgent } from "./agent";
 import { TaskStatus } from "./types/agent/types";
 
-export { TaskStatus, HyperAgent };
-export default HyperAgent;
+export { TaskStatus, BrowserAgent };
+export default BrowserAgent;
 
 // For CommonJS compatibility
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = HyperAgent;
-  module.exports.HyperAgent = HyperAgent;
+  module.exports = BrowserAgent;
+  module.exports.BrowserAgent = BrowserAgent;
   module.exports.TaskStatus = TaskStatus;
-  module.exports.default = HyperAgent;
+  module.exports.default = BrowserAgent;
 }

@@ -1,9 +1,9 @@
-export class HyperagentError extends Error {
+export class BrowserAgentError extends Error {
   constructor(
     message: string,
     public statusCode?: number
   ) {
-    super(`[Hyperagent]: ${message}`);
-    this.name = "HyperagentError";
+    super(`[BrowserAgent]: ${message}`);
+    this.name = "BrowserAgentError";
   }
 }

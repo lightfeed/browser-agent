@@ -22,7 +22,7 @@ import {
 } from "./agent/types";
 
 // Config Types
-import { HyperAgentConfig } from "./config";
+import { BrowserAgentConfig } from "./config";
 
 // Browser Provider Types
 import BrowserProvider from "./browser-providers/types";
@@ -48,7 +48,7 @@ export {
   TokenUsage,
 
   // Config Types
-  HyperAgentConfig,
+  BrowserAgentConfig,
 
   // Browser Provider Types
   BrowserProvider,

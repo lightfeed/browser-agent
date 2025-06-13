@@ -1,13 +1,13 @@
 /**
  * # Anthropic LLM Integration Example
  *
- * This example demonstrates how to configure and use HyperAgent with Anthropic's
+ * This example demonstrates how to configure and use BrowserAgent with Anthropic's
  * Claude language models for web automation tasks.
  *
  * ## What This Example Does
  *
  * The agent performs a web scraping task that:
- * 1. Configures HyperAgent with Anthropic's Claude 3 Sonnet model
+ * 1. Configures BrowserAgent with Anthropic's Claude 3 Sonnet model
  * 2. Navigates to Hacker News
  * 3. Searches for and extracts information about "Show HN" posts
  *
@@ -24,7 +24,7 @@
  */
 
 import "dotenv/config";
-import HyperAgent from "@hyperbrowser/agent";
+import BrowserAgent from "@hyperbrowser/agent";
 
 import chalk from "chalk";
 import { ChatAnthropic } from "@langchain/anthropic";
@@ -38,7 +38,7 @@ async function runEval() {
     model: "claude-3-7-sonnet-latest",
   });
 
-  const agent = new HyperAgent({
+  const agent = new BrowserAgent({
     llm: llm,
   });
 

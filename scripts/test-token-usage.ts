@@ -1,10 +1,10 @@
-import { HyperAgent } from "../src/agent";
+import { BrowserAgent } from "../src/agent";
 import chalk from "chalk";
 
 (async () => {
   console.log(chalk.cyan.bold("Testing Token Usage Tracking..."));
 
-  const agent = new HyperAgent({
+  const agent = new BrowserAgent({
     // Uses default OpenAI configuration from environment
   });
 

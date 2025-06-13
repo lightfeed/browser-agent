@@ -1,7 +1,7 @@
 /**
  * # Output Schema Example
  *
- * This example demonstrates how to use HyperAgent with a defined output schema
+ * This example demonstrates how to use BrowserAgent with a defined output schema
  * to ensure structured and validated responses from the agent.
  *
  * ## What This Example Does
@@ -24,7 +24,7 @@
  */
 
 import "dotenv/config";
-import { HyperAgent } from "@hyperbrowser/agent";
+import { BrowserAgent } from "@hyperbrowser/agent";
 
 import chalk from "chalk";
 import { sleep } from "../../src/utils/sleep";
@@ -40,7 +40,7 @@ async function runEval() {
     model: "gpt-4o",
   });
 
-  const agent = new HyperAgent({
+  const agent = new BrowserAgent({
     llm: llm,
     debug: true,
   });

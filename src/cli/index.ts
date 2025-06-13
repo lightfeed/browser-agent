@@ -9,7 +9,7 @@ import chalk from "chalk";
 import readline from "readline";
 import { zipWith } from "lodash";
 
-import { HyperAgent } from "@/agent";
+import { BrowserAgent } from "@/agent";
 import { UserInteractionAction } from "@/custom-actions";
 import {
   ActionOutput,
@@ -20,7 +20,7 @@ import {
   TaskOutput,
   TaskStatus,
 } from "@/types";
-import { HyperagentError } from "@/agent/error";
+import { BrowserAgentError } from "@/agent/error";
 
 const program = new Command();
 
@@ -43,12 +43,12 @@ program
     let taskDescription = (options.command as string) || undefined;
     const filePath = (options.file as string) || undefined;
 
-    console.log(chalk.blue("HyperAgent CLI"));
+    console.log(chalk.blue("BrowserAgent CLI"));
     currentSpinner.info(
       `Pause using ${chalk.bold("ctrl + p")} and resume using ${chalk.bold("ctrl + r")}\n`
     );
     try {
-      const agent = new HyperAgent({
+      const agent = new BrowserAgent({
         debug: debug,
         browserProvider: "Local",
         customActions: [
@@ -128,7 +128,7 @@ program
           }
           currentSpinner.start(
             chalk.blue(
-              "Hyperagent will pause after completing this operation. Press Ctrl+r again to resume."
+              "BrowserAgent will pause after completing this operation. Press Ctrl+r again to resume."
             )
           );
           currentSpinner.stopAndPersist({ symbol: "⏸" });
@@ -139,7 +139,7 @@ program
           }
         } else if (key && key.ctrl && key.name == "r") {
           if (task.getStatus() == TaskStatus.PAUSED) {
-            currentSpinner.start(chalk.blue("Hyperagent will resume"));
+            currentSpinner.start(chalk.blue("BrowserAgent will resume"));
             currentSpinner.stopAndPersist({ symbol: "⏵" });
             currentSpinner = ora();
 
@@ -149,7 +149,7 @@ program
           if (currentSpinner.isSpinning) {
             currentSpinner.stopAndPersist();
           }
-          console.log("\nShutting down HyperAgent");
+          console.log("\nShutting down BrowserAgent");
           try {
             await agent.closeAgent();
             process.exit(0);
@@ -204,7 +204,7 @@ program
       const onComplete = async (params: TaskOutput) => {
         console.log(
           boxen(params.output || "No Response", {
-            title: chalk.yellow("HyperAgent Response"),
+            title: chalk.yellow("BrowserAgent Response"),
             titleAlignment: "center",
             float: "center",
             padding: 1,
@@ -221,7 +221,7 @@ program
         });
         if (continueTask) {
           const taskDescription = await inquirer.input({
-            message: "What should HyperAgent do next for you?",
+            message: "What should BrowserAgent do next for you?",
             required: true,
           });
 
@@ -246,7 +246,7 @@ program
           taskDescription = (await fs.promises.readFile(filePath)).toString();
         } else {
           taskDescription = await inquirer.input({
-            message: "What should HyperAgent do for you today?",
+            message: "What should BrowserAgent do for you today?",
             required: true,
           });
         }
@@ -262,7 +262,7 @@ program
         throw error;
       });
     } catch (err) {
-      if (err instanceof HyperagentError || err instanceof Error) {
+      if (err instanceof BrowserAgentError || err instanceof Error) {
         console.log(chalk.red(err.message));
         if (debug) {
           console.trace(err);

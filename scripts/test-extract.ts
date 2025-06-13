@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { HyperAgent } from "../src/agent";
+import { BrowserAgent } from "../src/agent";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-const agent = new HyperAgent();
+const agent = new BrowserAgent();
 
 (async () => {
   const page = await agent.newPage();

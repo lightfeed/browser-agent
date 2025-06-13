@@ -2,7 +2,7 @@
  * # Token Usage Tracking Example
  *
  * This example demonstrates how to track token usage for each step
- * when using HyperAgent with LangChain.js callbacks.
+ * when using BrowserAgent with LangChain.js callbacks.
  *
  * ## What This Example Does
  *
@@ -24,7 +24,7 @@
  */
 
 import "dotenv/config";
-import { HyperAgent } from "../src/agent";
+import { BrowserAgent } from "../src/agent";
 import { ChatOpenAI } from "@langchain/openai";
 import chalk from "chalk";
 
@@ -36,7 +36,7 @@ async function runTokenTrackingExample() {
     model: "gpt-4o-mini", // Using mini model for cost efficiency
   });
 
-  const agent = new HyperAgent({
+  const agent = new BrowserAgent({
     llm: llm,
     debug: true,
   });

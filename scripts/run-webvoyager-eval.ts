@@ -1,4 +1,4 @@
-import { HyperAgent } from "../src/agent";
+import { BrowserAgent } from "../src/agent";
 import dotenv from "dotenv";
 import chalk from "chalk";
 import fs from "fs";
@@ -175,7 +175,7 @@ Respond in JSON format with { isCorrect: true | false, reason: string }`,
 }
 
 async function runEvalHelper(
-  agent: HyperAgent,
+  agent: BrowserAgent,
   eval_data: WebVoyagerEval,
   references: References,
   logger: Logger,
@@ -291,7 +291,7 @@ const runEval = async (
     apiKey: process.env.OPENAI_API_KEY,
     model: "gpt-4o",
   });
-  const agent = new HyperAgent({
+  const agent = new BrowserAgent({
     llm: llm,
     hyperbrowserConfig: {
       hyperbrowserSessionOptions: {

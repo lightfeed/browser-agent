@@ -5,9 +5,14 @@ import {
   HyperbrowserProvider,
   LocalBrowserProvider,
   ServerlessBrowserProvider,
+  RemoteBrowserProvider,
 } from "@/browser-providers";
 
-export type BrowserProviders = "Local" | "Hyperbrowser" | "Serverless";
+export type BrowserProviders =
+  | "Local"
+  | "Hyperbrowser"
+  | "Serverless"
+  | "Remote";
 
 export interface HyperAgentConfig<T extends BrowserProviders = "Local"> {
   customActions?: Array<AgentActionDefinition>;
@@ -23,4 +28,5 @@ export interface HyperAgentConfig<T extends BrowserProviders = "Local"> {
   >;
   localConfig?: ConstructorParameters<typeof LocalBrowserProvider>[0];
   serverlessConfig?: ConstructorParameters<typeof ServerlessBrowserProvider>[0];
+  remoteConfig?: ConstructorParameters<typeof RemoteBrowserProvider>[0];
 }

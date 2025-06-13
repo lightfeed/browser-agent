@@ -25,7 +25,7 @@ export class ServerlessBrowserProvider extends BrowserProvider<Browser> {
       ...(this.options ?? {}),
       headless: true,
       executablePath: this.executablePath,
-      args: [...launchArgs, "--disable-blink-features=AutomationControlled"],
+      args: ["--disable-blink-features=AutomationControlled", ...launchArgs],
       ...(this.proxy == null
         ? {}
         : {

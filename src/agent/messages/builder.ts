@@ -64,8 +64,6 @@ export const buildAgentStepMessages = async (
   });
 
   // Add page screenshot section
-  console.log("messages", messages);
-
   const scrollInfo = await retry({ func: () => getScrollInfo(page) });
   messages.push({
     role: "user",

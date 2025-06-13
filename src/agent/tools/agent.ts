@@ -41,7 +41,6 @@ class TokenTrackingCallbackHandler extends BaseCallbackHandler {
   handleLLMEnd(output: LLMResult): void {
     // Extract token usage from the LLM result
     const usage = output.llmOutput?.tokenUsage;
-    console.log("usage", usage);
     if (usage) {
       this.tokenUsage = {
         inputTokens: usage.promptTokens || 0,
@@ -76,8 +75,6 @@ const compositeScreenshot = async (page: Page, overlay: string) => {
 
   // Extract base64 from data URL (remove "data:image/png;base64," prefix)
   const base64Result = mergedImage.split(",")[1];
-
-  console.log("base64Result", base64Result);
 
   return base64Result;
 };
@@ -242,8 +239,6 @@ export const runAgentTask = async (
     const agentOutput = await retry({
       func: () => llmStructured.invoke(msgs, { callbacks: [tokenTracker] }),
     });
-
-    console.log("agentOutput", agentOutput);
 
     // Get token usage from the callback handler
     const tokenUsage = tokenTracker.getTokenUsage();

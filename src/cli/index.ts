@@ -21,7 +21,6 @@ import {
   TaskStatus,
 } from "@/types";
 import { HyperagentError } from "@/agent/error";
-import { SessionDetail } from "@hyperbrowser/sdk/types";
 
 const program = new Command();
 
@@ -38,11 +37,9 @@ program
   .option("-d, --debug", "Enable debug mode")
   .option("-c, --command <task description>", "Command to run")
   .option("-f, --file <file path>", "Path to a file containing a command")
-  .option("--hyperbrowser", "Use Hyperbrowser for the browser provider")
   .action(async function () {
     const options = this.opts();
     const debug = (options.debug as boolean) || false;
-    const useHB = (options.hyperbrowser as boolean) || false;
     let taskDescription = (options.command as string) || undefined;
     const filePath = (options.file as string) || undefined;
 
@@ -51,25 +48,9 @@ program
       `Pause using ${chalk.bold("ctrl + p")} and resume using ${chalk.bold("ctrl + r")}\n`
     );
     try {
-      // Check for API key if using Hyperbrowser
-      if (useHB && !process.env.HYPERBROWSER_API_KEY) {
-        const apiKey = await inquirer.password({
-          message:
-            "Hyperbrowser API key not found in environment variables. Please enter it here:",
-          mask: "*",
-        });
-        if (!apiKey) {
-          console.log(
-            chalk.yellow("Hyperbrowser API key is required. Exiting.")
-          );
-          process.exit(0);
-        }
-        process.env.HYPERBROWSER_API_KEY = apiKey; // Set it for the current process
-      }
-
       const agent = new HyperAgent({
         debug: debug,
-        browserProvider: useHB ? "Hyperbrowser" : "Local",
+        browserProvider: "Local",
         customActions: [
           UserInteractionAction(
             async ({ message, kind, choices }): Promise<ActionOutput> => {
@@ -269,12 +250,6 @@ program
             required: true,
           });
         }
-      }
-
-      if (useHB && !debug) {
-        await agent.initBrowser();
-        const session = agent.getSession() as SessionDetail;
-        console.log(`Hyperbrowser Live URL: ${session.liveUrl}\n`);
       }
 
       task = await agent.executeTaskAsync(taskDescription, {

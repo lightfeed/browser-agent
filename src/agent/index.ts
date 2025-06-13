@@ -20,8 +20,9 @@ import {
   generateCompleteActionWithOutputDefinition,
 } from "./actions";
 import {
-  HyperbrowserProvider,
   LocalBrowserProvider,
+  ServerlessBrowserProvider,
+  RemoteBrowserProvider,
 } from "../browser-providers";
 import { HyperagentError } from "./error";
 import { runAgentTask } from "./tools/agent";
@@ -34,9 +35,11 @@ export class HyperAgent<T extends BrowserProviders = "Local"> {
   private tasks: Record<string, TaskState> = {};
   private tokenLimit = 128000;
   private debug = false;
-  private browserProvider: T extends "Hyperbrowser"
-    ? HyperbrowserProvider
-    : LocalBrowserProvider;
+  private browserProvider: T extends "Serverless"
+    ? ServerlessBrowserProvider
+    : T extends "Remote"
+      ? RemoteBrowserProvider
+      : LocalBrowserProvider;
   private browserProviderType: T;
   private actions: Array<AgentActionDefinition> = [...DEFAULT_ACTIONS];
 
@@ -74,13 +77,16 @@ export class HyperAgent<T extends BrowserProviders = "Local"> {
     this.browserProviderType = (params.browserProvider ?? "Local") as T;
 
     this.browserProvider = (
-      this.browserProviderType === "Hyperbrowser"
-        ? new HyperbrowserProvider({
-            ...(params.hyperbrowserConfig ?? {}),
-            debug: params.debug,
-          })
-        : new LocalBrowserProvider(params.localConfig)
-    ) as T extends "Hyperbrowser" ? HyperbrowserProvider : LocalBrowserProvider;
+      this.browserProviderType === "Serverless"
+        ? new ServerlessBrowserProvider(params.serverlessConfig!)
+        : this.browserProviderType === "Remote"
+          ? new RemoteBrowserProvider(params.remoteConfig!)
+          : new LocalBrowserProvider(params.localConfig)
+    ) as T extends "Serverless"
+      ? ServerlessBrowserProvider
+      : T extends "Remote"
+        ? RemoteBrowserProvider
+        : LocalBrowserProvider;
 
     if (params.customActions) {
       params.customActions.forEach(this.registerAction, this);

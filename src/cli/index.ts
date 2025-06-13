@@ -27,8 +27,8 @@ const program = new Command();
 let currentSpinner = ora();
 
 program
-  .name("hyperbrowser")
-  .description("CLI for Hyperbrowser - A powerful browser automation tool")
+  .name("browseragent")
+  .description("CLI for Browser Agent")
   .version("0.0.1");
 
 program

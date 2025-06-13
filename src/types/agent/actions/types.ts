@@ -2,14 +2,14 @@ import { Page } from "playwright";
 import { DOMState } from "../../../context-providers/dom/types";
 import { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import { z } from "zod";
-import { HyperVariable } from "../types";
+import { AgentVariable } from "../types";
 
 export interface ActionContext {
   page: Page;
   domState: DOMState;
   llm: BaseChatModel;
   tokenLimit: number;
-  variables: HyperVariable[];
+  variables: AgentVariable[];
   debugDir?: string;
 }
 

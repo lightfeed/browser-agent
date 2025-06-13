@@ -88,13 +88,13 @@ export interface TaskState {
   error?: string;
 }
 
-export interface HyperVariable {
+export interface AgentVariable {
   key: string;
   value: string;
   description: string;
 }
 
-export interface HyperPage extends Page {
+export interface AgentPage extends Page {
   ai: (task: string, params?: TaskParams) => Promise<TaskOutput>;
   aiAsync: (task: string, params?: TaskParams) => Promise<Task>;
   extract<T extends z.AnyZodObject | undefined = undefined>(

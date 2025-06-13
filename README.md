@@ -14,23 +14,6 @@ npm install @lightfeed/browser-agent
 
 Perfect for AWS Lambda and other serverless environments. Uses [@sparticuz/chromium](https://github.com/Sparticuz/chromium) to run Chrome in serverless environments with minimal cold start times and memory usage.
 
-Basic setup without proxy:
-```typescript
-import { BrowserAgent } from '@lightfeed/browser-agent';
-import chromium from '@sparticuz/chromium';
-
-const agent = new BrowserAgent({
-  browserProvider: 'Serverless',
-  serverlessConfig: {
-    executablePath: await chromium.executablePath(),
-    options: {
-      args: chromium.args,
-    }
-  }
-});
-```
-
-With proxy support (optional):
 ```typescript
 import { BrowserAgent } from '@lightfeed/browser-agent';
 import chromium from '@sparticuz/chromium';
@@ -43,6 +26,7 @@ const agent = new BrowserAgent({
     options: {
       args: chromium.args,
     },
+    // Use proxy (optional)
     proxy: {
       host: 'proxy.example.com',
       port: 8080,
@@ -60,6 +44,7 @@ export const handler = async (event) => {
   await page.goto('https://ycombinator.com/companies');
 
   page.ai('Find real estate YC startups in the latest two batches');
+  // ...
 };
 ```
 

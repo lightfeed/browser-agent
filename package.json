@@ -2,11 +2,16 @@
   "name": "@lightfeed/browser-agent",
   "version": "0.1.0",
   "description": "Serverless browser agent",
-  "author": "",
+  "author": "Lightfeed",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lightfeed/browser-agent.git"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "commonjs",
   "license": "MIT",
+  "homepage": "https://github.com/lightfeed/browser-agent",
   "scripts": {
     "build": "rm -rf dist && tsc && tsc-alias && node -e \"require('fs').chmodSync('dist/cli/index.js', '755')\" && node -e \"require('fs').chmodSync('cli.sh', '755')\"",
     "build-dom-tree-script": "ts-node src/context-providers/dom/builder.ts",

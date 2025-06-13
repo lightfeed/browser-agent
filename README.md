@@ -12,6 +12,25 @@ npm install @lightfeed/browser-agent
 
 ### Serverless
 
+Perfect for AWS Lambda and other serverless environments. Uses [@sparticuz/chromium](https://github.com/Sparticuz/chromium) to run Chrome in serverless environments with minimal cold start times and memory usage.
+
+Basic setup without proxy:
+```typescript
+import { BrowserAgent } from '@lightfeed/browser-agent';
+import chromium from '@sparticuz/chromium';
+
+const agent = new BrowserAgent({
+  browserProvider: 'Serverless',
+  serverlessConfig: {
+    executablePath: await chromium.executablePath(),
+    options: {
+      args: chromium.args,
+    }
+  }
+});
+```
+
+With proxy support (optional):
 ```typescript
 import { BrowserAgent } from '@lightfeed/browser-agent';
 import chromium from '@sparticuz/chromium';
@@ -46,6 +65,11 @@ export const handler = async (event) => {
 
 ### Remote Browser
 
+Connect to any remote browser instance via WebSocket. Great for:
+- Brightdata's Scraping Browser
+- Custom browser instances in the cloud
+- Browser farms and proxy services
+
 ```typescript
 import { BrowserAgent } from '@lightfeed/browser-agent';
 
@@ -63,6 +87,11 @@ page.ai('Search for organic products and go to the second page');
 ```
 
 ### Local Browser
+
+Use your local Chrome browser for development and testing. Perfect for:
+- Local development and debugging
+- Testing automation scripts
+- Quick prototyping
 
 ```typescript
 import { BrowserAgent } from '@lightfeed/browser-agent';

@@ -2,7 +2,6 @@ import { Page } from "playwright";
 import { DOMState } from "../../../context-providers/dom/types";
 import { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import { z } from "zod";
-import { MCPClient } from "../../../agent/mcp/client";
 import { HyperVariable } from "../types";
 
 export interface ActionContext {
@@ -12,7 +11,6 @@ export interface ActionContext {
   tokenLimit: number;
   variables: HyperVariable[];
   debugDir?: string;
-  mcpClient?: MCPClient;
 }
 
 export interface ActionOutput {

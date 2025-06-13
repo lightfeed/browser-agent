@@ -28,15 +28,55 @@ import { DOMState } from "@/context-providers/dom/types";
 import { Page } from "playwright";
 import { ActionNotFoundError } from "../actions";
 import { AgentCtx } from "./types";
-import sharp from "sharp";
+import mergeImages from "merge-images";
+import { Canvas, Image } from "canvas";
+import { BaseCallbackHandler } from "@langchain/core/callbacks/base";
+import { LLMResult } from "@langchain/core/outputs";
+import { TokenUsage } from "@/types/agent/types";
+
+class TokenTrackingCallbackHandler extends BaseCallbackHandler {
+  name = "TokenTrackingCallbackHandler";
+  private tokenUsage: TokenUsage | null = null;
+
+  handleLLMEnd(output: LLMResult): void {
+    // Extract token usage from the LLM result
+    const usage = output.llmOutput?.tokenUsage;
+    if (usage) {
+      this.tokenUsage = {
+        inputTokens: usage.promptTokens || 0,
+        outputTokens: usage.completionTokens || 0,
+        totalTokens: usage.totalTokens || 0,
+      };
+    }
+  }
+
+  getTokenUsage(): TokenUsage | null {
+    return this.tokenUsage;
+  }
+
+  reset(): void {
+    this.tokenUsage = null;
+  }
+}
 
 const compositeScreenshot = async (page: Page, overlay: string) => {
+  // Take screenshot and convert to base64
   const screenshot = await page.screenshot();
-  const responseBuffer = await sharp(screenshot)
-    .composite([{ input: Buffer.from(overlay, "base64") }])
-    .png()
-    .toBuffer();
-  return responseBuffer.toString("base64");
+  const screenshotBase64 = `data:image/png;base64,${screenshot.toString("base64")}`;
+
+  // Prepare overlay as data URL
+  const overlayBase64 = `data:image/png;base64,${overlay}`;
+
+  // Merge the images
+  const mergedImage = await mergeImages([screenshotBase64, overlayBase64], {
+    Canvas: Canvas,
+    Image: Image,
+  });
+
+  // Extract base64 from data URL (remove "data:image/png;base64," prefix)
+  const base64Result = mergedImage.split(",")[1];
+
+  return base64Result;
 };
 
 const getActionSchema = (actions: Array<AgentActionDefinition>) => {
@@ -78,7 +118,6 @@ const runAction = async (
     tokenLimit: ctx.tokenLimit,
     llm: ctx.llm,
     debugDir: ctx.debugDir,
-    mcpClient: ctx.mcpClient || undefined,
     variables: Object.values(ctx.variables),
   };
   const actionType = action.type;
@@ -192,10 +231,16 @@ export const runAgentTask = async (
       );
     }
 
-    // Invoke LLM
+    // Create token tracking callback handler
+    const tokenTracker = new TokenTrackingCallbackHandler();
+
+    // Invoke LLM with token tracking
     const agentOutput = await retry({
-      func: () => llmStructured.invoke(msgs),
+      func: () => llmStructured.invoke(msgs, { callbacks: [tokenTracker] }),
     });
+
+    // Get token usage from the callback handler
+    const tokenUsage = tokenTracker.getTokenUsage();
 
     params?.debugOnAgentOutput?.(agentOutput);
 
@@ -238,6 +283,7 @@ export const runAgentTask = async (
       idx: currStep,
       agentOutput: agentOutput,
       actionOutputs,
+      tokenUsage: tokenUsage || undefined,
     };
     taskState.steps.push(step);
     await params?.onStep?.(step);

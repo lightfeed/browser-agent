@@ -17,11 +17,12 @@ import {
   Task,
   TaskStatus,
   TaskState,
+  TokenUsage,
   endTaskStatuses,
 } from "./agent/types";
 
 // Config Types
-import { MCPServerConfig, MCPConfig, HyperAgentConfig } from "./config";
+import { HyperAgentConfig } from "./config";
 
 // Browser Provider Types
 import BrowserProvider from "./browser-providers/types";
@@ -44,10 +45,9 @@ export {
   Task,
   TaskStatus,
   TaskState,
+  TokenUsage,
 
   // Config Types
-  MCPServerConfig,
-  MCPConfig,
   HyperAgentConfig,
 
   // Browser Provider Types

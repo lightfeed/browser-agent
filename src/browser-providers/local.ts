@@ -1,4 +1,4 @@
-import { chromium, Browser, LaunchOptions } from "playwright";
+import { chromium, Browser, LaunchOptions } from "rebrowser-playwright-core";
 import BrowserProvider from "@/types/browser-providers/types";
 
 export class LocalBrowserProvider extends BrowserProvider<Browser> {

@@ -29,12 +29,12 @@ npm install @lightfeed/browser-agent
 Perfect for AWS Lambda and other serverless environments. Uses [@sparticuz/chromium](https://github.com/Sparticuz/chromium) to run Chrome in serverless environments with minimal cold start times and memory usage.
 
 ```typescript
-import { BrowserAgent } from '@lightfeed/browser-agent';
-import chromium from '@sparticuz/chromium';
-import { AxiosProxyConfig } from 'axios';
+import { BrowserAgent } from "@lightfeed/browser-agent";
+import chromium from "@sparticuz/chromium";
+import { AxiosProxyConfig } from "axios";
 
 const agent = new BrowserAgent({
-  browserProvider: 'Serverless',
+  browserProvider: "Serverless",
   serverlessConfig: {
     executablePath: await chromium.executablePath(),
     options: {
@@ -42,11 +42,11 @@ const agent = new BrowserAgent({
     },
     // Use proxy (optional)
     proxy: {
-      host: 'proxy.example.com',
+      host: "proxy.example.com",
       port: 8080,
       auth: {
-        username: 'user',
-        password: 'pass'
+        username: "user",
+        password: "pass"
       }
     } as AxiosProxyConfig
   }
@@ -55,9 +55,9 @@ const agent = new BrowserAgent({
 // Example Lambda handler
 export const handler = async (event) => {
   const page = await agent.newPage();
-  await page.goto('https://ycombinator.com/companies');
+  await page.goto("https://ycombinator.com/companies");
 
-  page.ai('Find real estate YC startups in the latest two batches');
+  page.ai("Find real estate YC startups in the latest two batches");
   // ...
 };
 ```
@@ -70,19 +70,19 @@ Connect to any remote browser instance via WebSocket. Great for:
 - Browser farms and proxy services
 
 ```typescript
-import { BrowserAgent } from '@lightfeed/browser-agent';
+import { BrowserAgent } from "@lightfeed/browser-agent";
 
 const agent = new BrowserAgent({
-  browserProvider: 'Remote',
+  browserProvider: "Remote",
   remoteConfig: {
-    browserWSEndpoint: 'ws://your-remote-browser:9222/devtools/browser/ws'
+    browserWSEndpoint: "ws://your-remote-browser:9222/devtools/browser/ws"
   }
 });
 
 const page = await agent.newPage();
-await page.goto('https://amazon.com');
+await page.goto("https://amazon.com");
 
-page.ai('Search for organic products and go to the second page');
+page.ai("Search for organic products and go to the second page");
 ```
 
 ### Local Browser
@@ -93,16 +93,16 @@ Use your local Chrome browser for development and testing. Perfect for:
 - Quick prototyping
 
 ```typescript
-import { BrowserAgent } from '@lightfeed/browser-agent';
+import { BrowserAgent } from "@lightfeed/browser-agent";
 
 const agent = new BrowserAgent({
-  browserProvider: 'Local'
+  browserProvider: "Local"
 });
 
 const page = await agent.newPage();
-await page.goto('https://news.ycombinator.com');
+await page.goto("https://news.ycombinator.com");
 
-page.ai('Navigate to show section and go to the second post');
+page.ai("Navigate to show section and go to the second post");
 ```
 
 ## Contributing

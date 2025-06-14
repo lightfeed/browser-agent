@@ -1,6 +1,6 @@
 import { AgentStep } from "@/types";
 import { BaseMessageLike } from "@langchain/core/messages";
-import { Page } from "playwright";
+import { Page } from "rebrowser-playwright-core";
 import { getScrollInfo } from "./utils";
 import { retry } from "@/utils/retry";
 import { DOMState } from "@/context-providers/dom/types";

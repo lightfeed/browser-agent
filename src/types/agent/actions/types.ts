@@ -1,4 +1,4 @@
-import { Page } from "playwright";
+import { Page } from "rebrowser-playwright-core";
 import { DOMState } from "../../../context-providers/dom/types";
 import { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import { z } from "zod";

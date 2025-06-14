@@ -1,4 +1,8 @@
-import { chromium, Browser, ConnectOverCDPOptions } from "playwright";
+import {
+  chromium,
+  Browser,
+  ConnectOverCDPOptions,
+} from "rebrowser-playwright-core";
 import BrowserProvider from "@/types/browser-providers/types";
 
 export class RemoteBrowserProvider extends BrowserProvider<Browser> {

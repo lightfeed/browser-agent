@@ -1,8 +1,12 @@
-<h1>
+<h1 align="center">
   Serverless Browser Agent ⚡️
 </h1>
 
-<div>
+<p align="center">
+  <strong>Use AI to navigate and interact with web browsers in serverless platforms</strong>
+</p>
+
+<div align="center">
   <a href="https://www.npmjs.com/package/@lightfeed/browser-agent">
     <img src="https://img.shields.io/npm/v/@lightfeed/browser-agent?logo=npm" alt="npm" /></a>
   <a href="https://github.com/lightfeed/browser-agent/actions/workflows/test.yml">
@@ -11,9 +15,6 @@
   <a href="https://github.com/lightfeed/browser-agent/blob/main/LICENSE">
     <img src="https://img.shields.io/github/license/lightfeed/browser-agent" alt="License" /></a>
 </div>
-<br />
-
-Use AI to navigate and interact with web browsers in serverless platforms. This project is a fork of [HyperAgent](https://github.com/hyperbrowserai/HyperAgent) with additional features for serverless and remote browser support.
 
 ## Installation
 
@@ -114,5 +115,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Acknowledgments
 
-- Original work by [HyperAgent](https://github.com/hyperbrowserai/HyperAgent)
+- Forked from [HyperAgent](https://github.com/hyperbrowserai/HyperAgent) version b49afe under MIT License
 - Browser support in serverless environments by [@sparticuz/chromium](https://github.com/Sparticuz/chromium)

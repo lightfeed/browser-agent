@@ -5,7 +5,7 @@ import chalk from "chalk";
 dotenv.config();
 
 const agent = new BrowserAgent({
-  // a: process.env.OPENAI_API_KEY,
+  maxSteps: 2,
 });
 
 (async () => {

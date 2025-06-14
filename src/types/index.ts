@@ -22,7 +22,7 @@ import {
 } from "./agent/types";
 
 // Config Types
-import { BrowserAgentConfig } from "./config";
+import { BrowserAgentConfig, BrowserProviders } from "./config";
 
 // Browser Provider Types
 import BrowserProvider from "./browser-providers/types";
@@ -49,6 +49,7 @@ export {
 
   // Config Types
   BrowserAgentConfig,
+  BrowserProviders,
 
   // Browser Provider Types
   BrowserProvider,

@@ -25,7 +25,7 @@ import { getStructuredOutputMethod } from "../llms/structured-output";
 import { SYSTEM_PROMPT } from "../messages/system-prompt";
 import { z } from "zod";
 import { DOMState } from "@/context-providers/dom/types";
-import { Page } from "rebrowser-playwright-core";
+import { Page } from "playwright";
 import { ActionNotFoundError } from "../actions";
 import { AgentCtx } from "./types";
 import mergeImages from "merge-images";

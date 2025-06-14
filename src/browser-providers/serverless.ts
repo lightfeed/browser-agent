@@ -1,4 +1,4 @@
-import { chromium, Browser, LaunchOptions } from "rebrowser-playwright-core";
+import { chromium, Browser, LaunchOptions } from "playwright";
 import { AxiosProxyConfig } from "axios";
 import BrowserProvider from "@/types/browser-providers/types";
 

@@ -1,6 +1,6 @@
 import { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import { ChatOpenAI } from "@langchain/openai";
-import { Browser, BrowserContext, Page } from "rebrowser-playwright-core";
+import { Browser, BrowserContext, Page } from "playwright";
 import { v4 as uuidv4 } from "uuid";
 
 import { BrowserProviders, BrowserAgentConfig } from "@/types/config";

@@ -1,4 +1,4 @@
-import { Page } from "rebrowser-playwright-core";
+import { Page } from "playwright";
 import { buildDomViewJs } from "./inject/build-dom-view";
 import { DOMState, DOMStateRaw, InteractiveElement } from "./types";
 

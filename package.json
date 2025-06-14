@@ -1,6 +1,6 @@
 {
   "name": "@lightfeed/browser-agent",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Serverless browser agent",
   "author": "Lightfeed",
   "repository": {

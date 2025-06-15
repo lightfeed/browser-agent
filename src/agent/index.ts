@@ -81,7 +81,7 @@ export class BrowserAgent<T extends BrowserProviders = "Local"> {
         ? new ServerlessBrowserProvider(params.serverlessConfig!)
         : this.browserProviderType === "Remote"
           ? new RemoteBrowserProvider(params.remoteConfig!)
-          : new LocalBrowserProvider(params.localConfig)
+          : new LocalBrowserProvider(params.localConfig ?? {})
     ) as T extends "Serverless"
       ? ServerlessBrowserProvider
       : T extends "Remote"

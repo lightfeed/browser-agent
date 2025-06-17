@@ -1,6 +1,7 @@
 import { BrowserAgent } from "../src/agent";
 import { ChatOpenAI } from "@langchain/openai";
 import dotenv from "dotenv";
+import { z } from "zod";
 
 dotenv.config();
 
@@ -9,7 +10,7 @@ const agent = new BrowserAgent({
   debug: true,
   llm: new ChatOpenAI({
     apiKey: process.env.OPENAI_API_KEY,
-    model: "gpt-4o-mini",
+    model: "gpt-4.1-mini",
   }),
 });
 
@@ -22,12 +23,15 @@ const agent = new BrowserAgent({
     console.log("Network idle timeout, continuing...");
   }
   const result = await page.ai(
-    `Go to page 2 of the results. If page 2 does not exist, return early and complete the task.
-
-Response format: Return ONLY this JSON with no additional text: {"success": boolean, "hasNextPage": boolean}
-- success: true if navigated successfully, false otherwise
-- hasNextPage: true if more pages exist after current position`,
-    { maxSteps: 3 }
+    `Go to page 2 of the results. If page 2 does not exist, return early and complete the task.`,
+    {
+      maxSteps: 3,
+      outputSchema: z.object({
+        success: z.boolean(),
+        currentPageNumber: z.number(),
+        hasNextPage: z.boolean(),
+      }),
+    }
   );
   console.log(result);
 })();

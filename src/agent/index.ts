@@ -152,11 +152,13 @@ export class BrowserAgent<T extends BrowserProviders = "Local"> {
     outputSchema?: z.AnyZodObject
   ): Array<AgentActionDefinition> {
     if (outputSchema) {
+      console.log("output schema", JSON.stringify(outputSchema, null, 2));
       return [
         ...this.actions,
         generateCompleteActionWithOutputDefinition(outputSchema),
       ];
     } else {
+      console.log("no output schema");
       return [...this.actions, CompleteActionDefinition];
     }
   }
@@ -317,6 +319,10 @@ export class BrowserAgent<T extends BrowserProviders = "Local"> {
       steps: [],
     };
     this.tasks[taskId] = taskState;
+    console.log(
+      "actions async",
+      JSON.stringify(this.getActions(params?.outputSchema), null, 2)
+    );
     runAgentTask(
       {
         llm: this.llm,
@@ -365,6 +371,7 @@ export class BrowserAgent<T extends BrowserProviders = "Local"> {
       steps: [],
     };
     this.tasks[taskId] = taskState;
+    console.log("actions sync", JSON.stringify(params?.outputSchema, null, 2));
     try {
       return await runAgentTask(
         {

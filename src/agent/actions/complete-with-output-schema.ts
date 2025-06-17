@@ -4,16 +4,18 @@ import { ActionContext, ActionOutput, AgentActionDefinition } from "@/types";
 export const generateCompleteActionWithOutputDefinition = (
   outputSchema: z.AnyZodObject
 ): AgentActionDefinition => {
+  console.log(
+    "outputSchema in generateCompleteActionWithOutputDefinition",
+    outputSchema
+  );
   const actionParamsSchema = z
     .object({
       success: z
         .boolean()
         .describe("Whether the task was completed successfully."),
-      outputSchema: outputSchema
-        .nullable()
-        .describe(
-          "The output model to return the response in. Given the previous data, try your best to fit the final response into the given schema."
-        ),
+      outputSchema: outputSchema.describe(
+        "The output model to return the response in. Given the previous data, try your best to fit the final response into the given schema."
+      ),
     })
     .describe(
       "Complete the task. An output schema has been provided to you. Try your best to provide your response so that it fits the output schema provided."

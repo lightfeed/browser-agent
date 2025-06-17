@@ -4,10 +4,6 @@ import { ActionContext, ActionOutput, AgentActionDefinition } from "@/types";
 export const generateCompleteActionWithOutputDefinition = (
   outputSchema: z.AnyZodObject
 ): AgentActionDefinition => {
-  console.log(
-    "outputSchema in generateCompleteActionWithOutputDefinition",
-    outputSchema
-  );
   const actionParamsSchema = z
     .object({
       success: z

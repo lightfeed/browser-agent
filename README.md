@@ -29,7 +29,7 @@ npm install @lightfeed/browser-agent
 Perfect for AWS Lambda and other serverless environments. Uses [@sparticuz/chromium](https://github.com/Sparticuz/chromium) to run Chrome in serverless environments with minimal cold start times and memory usage. Supports proxy configuration for geo-tracking and unblocking.
 
 > [!IMPORTANT]
-> This project uses Playwright, which ships with a specific version of Chromium. You need to install the matching version of `@sparticuz/chromium`. For example, we are using [Playwright 1.52](https://playwright.dev/docs/release-notes#version-152) (which supports to Chromium 136), you should install `@sparticuz/chromium@136`.
+> This project uses Playwright, which ships with a specific version of Chromium. You need to install the matching version of `@sparticuz/chromium`. For example, we are using [Playwright 1.48](https://playwright.dev/docs/release-notes#version-148) (which supports to Chromium 130), you should install `@sparticuz/chromium@130`.
 
 ```typescript
 import { BrowserAgent } from "@lightfeed/browser-agent";

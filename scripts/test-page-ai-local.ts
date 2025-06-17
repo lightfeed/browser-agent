@@ -17,14 +17,20 @@ const agent = new BrowserAgent({
     console.log("Network idle timeout, continuing...");
   }
   const result = await page.ai(
-    `Navigate exactly ONE page FORWARD through the main results. Please track current page number. Click only:
+    `Navigate exactly ONE page FORWARD through the main results. If you are on the last page, return early and complete the task.
+
+Click only:
 - "Next" button or links
 - Forward arrows
 - HIGER page numbers in pagination
 - Load more buttons
 
-DO NOT CLICK: "Previous" button, backward arrows or lower page numbers in pagination.
-If you are already on the last page, do nothing and return early.
+DO NOT CLICK:
+- "Previous" button
+- Backward arrows
+- Lower page numbers in pagination.
+
+If you are already on the last page, return early and complete the task.
     `,
     { maxSteps: 3 }
   );

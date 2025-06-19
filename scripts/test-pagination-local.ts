@@ -17,7 +17,19 @@ const agent = new BrowserAgent({
 
 (async () => {
   const page = await agent.newPage();
-  await page.goto("https://www.loblaws.ca/en/food/bakery/bread/c/28251");
+
+  await page.setViewportSize({ width: 1280, height: 1024 });
+
+  await page.route("**/*", (route, request) => {
+    const resourceType = request.resourceType();
+    if (["image", "video", "media", "font"].includes(resourceType)) {
+      route.abort();
+    } else {
+      route.continue();
+    }
+  });
+
+  await page.goto("https://news.ycombinator.com/");
   try {
     await page.waitForLoadState("networkidle", { timeout: 10000 });
   } catch {
@@ -29,8 +41,9 @@ const agent = new BrowserAgent({
   console.log("Run extraction for page 1");
   let nextPageNumber = 2;
   let hasNextPage = true;
+  const maxPage = 3;
 
-  while (hasNextPage) {
+  while (hasNextPage && nextPageNumber <= maxPage) {
     const result = await page.ai(
       `Go to page ${nextPageNumber} of the results. If page ${nextPageNumber} does not exist, return early and complete the task.`,
       {

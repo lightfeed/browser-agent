@@ -41,7 +41,8 @@ const DEFAULT_ACTIONS = [
   ScrollActionDefinition,
   InputTextActionDefinition,
   KeyPressActionDefinition,
-  ThinkingActionDefinition,
+  // --- Disable for now - saw issues with invalid structured output because of this action
+  // ThinkingActionDefinition,
 ];
 
 if (process.env.GEMINI_API_KEY) {

@@ -30,6 +30,7 @@ Perfect for AWS Lambda and other serverless environments. Uses [@sparticuz/chrom
 
 > [!IMPORTANT]
 > This project uses Playwright, which ships with a specific version of Chromium. You need to install the matching version of `@sparticuz/chromium`. For example, we are using [Playwright 1.48](https://playwright.dev/docs/release-notes#version-148) (which supports to Chromium 130), you should install `@sparticuz/chromium@130`.
+> For running on AWS Lambda, lambda layer with ARM64 architecture is preferred. You will also need to install dependencies of canvas.
 
 ```typescript
 import { BrowserAgent } from "@lightfeed/browser-agent";

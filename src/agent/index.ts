@@ -105,6 +105,7 @@ export class BrowserAgent<T extends BrowserProviders = "Local"> {
       this.browser = await this.browserProvider.start();
       this.context = await this.browser.newContext({
         viewport: null,
+        ignoreHTTPSErrors: true,
       });
 
       // Inject script to track event listeners

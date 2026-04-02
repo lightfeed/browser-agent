@@ -11,7 +11,11 @@ import { getDom } from "@/context-providers/dom";
 import { retry } from "@/utils/retry";
 import { sleep } from "@/utils/sleep";
 
-import { AgentOutputFn, endTaskStatuses } from "@/types/agent/types";
+import {
+  AgentOutput,
+  AgentOutputFn,
+  endTaskStatuses,
+} from "@/types/agent/types";
 import {
   TaskParams,
   TaskOutput,
@@ -223,9 +227,9 @@ export const runAgentTask = async (
     const tokenTracker = new TokenTrackingCallbackHandler();
 
     // Invoke LLM with token tracking
-    const agentOutput = await retry({
+    const agentOutput = (await retry({
       func: () => llmStructured.invoke(msgs, { callbacks: [tokenTracker] }),
-    });
+    })) as AgentOutput;
 
     // Get token usage from the callback handler
     const tokenUsage = tokenTracker.getTokenUsage();

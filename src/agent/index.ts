@@ -1,5 +1,4 @@
 import { BaseChatModel } from "@langchain/core/language_models/chat_models";
-import { ChatOpenAI } from "@langchain/openai";
 import { Browser, BrowserContext, Page } from "playwright";
 import { v4 as uuidv4 } from "uuid";
 
@@ -62,18 +61,9 @@ export class BrowserAgent<T extends BrowserProviders = "Local"> {
 
   constructor(params: BrowserAgentConfig<T> = {}) {
     if (!params.llm) {
-      if (process.env.OPENAI_API_KEY) {
-        this.llm = new ChatOpenAI({
-          openAIApiKey: process.env.OPENAI_API_KEY,
-          modelName: "gpt-4o-mini",
-          temperature: 0,
-        });
-      } else {
-        throw new BrowserAgentError("No LLM provider provided", 400);
-      }
-    } else {
-      this.llm = params.llm;
+      throw new BrowserAgentError("No LLM provider provided", 400);
     }
+    this.llm = params.llm;
     this.browserProviderType = (params.browserProvider ?? "Local") as T;
 
     this.browserProvider = (

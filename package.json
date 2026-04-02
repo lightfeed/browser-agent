@@ -43,7 +43,6 @@
   "dependencies": {
     "@google/genai": "^0.8.0",
     "@inquirer/prompts": "^7.4.1",
-    "@langchain/core": "^0.3.43",
     "@types/crypto-js": "^4.2.2",
     "boxen": "5.1.2",
     "chalk": "4.1.2",
@@ -51,7 +50,6 @@
     "crypto-js": "^4.2.0",
     "dotenv": "^16.4.5",
     "joplin-turndown-plugin-gfm": "^1.0.12",
-    "langchain": "^0.3.19",
     "lodash": "^4.17.21",
     "minimatch": "^9.0.3",
     "ora": "5.4.1",
@@ -62,8 +60,14 @@
     "zod": "^3.24.1",
     "zod-to-json-schema": "^3.24.1"
   },
+  "peerDependencies": {
+    "@langchain/core": ">=1.1.31"
+  },
   "devDependencies": {
-    "@langchain/anthropic": "^0.3.17",
+    "@langchain/anthropic": "^1.0.0",
+    "@langchain/core": "^1.1.31",
+    "@langchain/google-genai": "^2.1.24",
+    "@langchain/openai": "^1.2.12",
     "@types/jest": "^29.5.14",
     "@types/lodash": "^4.17.16",
     "@types/node": "^22.9.1",

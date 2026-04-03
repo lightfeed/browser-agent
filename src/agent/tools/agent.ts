@@ -32,7 +32,8 @@ import { DOMState } from "@/context-providers/dom/types";
 import { Page } from "playwright";
 import { ActionNotFoundError } from "../actions";
 import { AgentCtx } from "./types";
-import sharp from "sharp";
+import mergeImages from "merge-images";
+import { Canvas, Image } from "canvas";
 import { BaseCallbackHandler } from "@langchain/core/callbacks/base";
 import { LLMResult } from "@langchain/core/outputs";
 import { TokenUsage } from "@/types/agent/types";
@@ -64,11 +65,16 @@ class TokenTrackingCallbackHandler extends BaseCallbackHandler {
 
 const compositeScreenshot = async (page: Page, overlay: string) => {
   const screenshot = await page.screenshot();
-  const responseBuffer = await sharp(screenshot)
-    .composite([{ input: Buffer.from(overlay, "base64") }])
-    .png()
-    .toBuffer();
-  return responseBuffer.toString("base64");
+  const screenshotBase64 = `data:image/png;base64,${screenshot.toString("base64")}`;
+  const overlayBase64 = `data:image/png;base64,${overlay}`;
+
+  const mergedImage = await mergeImages([screenshotBase64, overlayBase64], {
+    Canvas: Canvas,
+    Image: Image,
+  });
+
+  const base64Result = mergedImage.split(",")[1];
+  return base64Result;
 };
 
 const getActionSchema = (actions: Array<AgentActionDefinition>) => {

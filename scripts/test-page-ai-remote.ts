@@ -1,9 +1,14 @@
+import { ChatOpenAI } from "@langchain/openai";
 import { BrowserAgent } from "../src/agent";
 import dotenv from "dotenv";
 
 dotenv.config();
 
 const agent = new BrowserAgent({
+  llm: new ChatOpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+    model: "gpt-4.1-mini",
+  }),
   browserProvider: "Remote",
   remoteConfig: {
     wsEndpoint: process.env.REMOTE_BROWSER_WS_ENDPOINT,

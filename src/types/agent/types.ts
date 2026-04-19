@@ -4,7 +4,7 @@ import { Page } from "playwright";
 import { ErrorEmitter } from "@/utils";
 
 export const AgentOutputFn = (
-  actionsSchema: z.ZodUnion<readonly [z.AnyZodObject, ...z.AnyZodObject[]]>
+  actionsSchema: z.ZodTypeAny
 ) =>
   z.object({
     thoughts: z

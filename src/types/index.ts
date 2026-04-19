@@ -25,7 +25,9 @@ import {
 import { BrowserAgentConfig, BrowserProviders } from "./config";
 
 // Browser Provider Types
-import BrowserProvider from "./browser-providers/types";
+import BrowserProvider, {
+  BrowserProviderType,
+} from "./browser-providers/types";
 
 // Export all types
 export {
@@ -53,6 +55,7 @@ export {
 
   // Browser Provider Types
   BrowserProvider,
+  BrowserProviderType,
   endTaskStatuses,
 };
 

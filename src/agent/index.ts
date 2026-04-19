@@ -34,6 +34,8 @@ export class BrowserAgent<T extends BrowserProviders = "Local"> {
   private tasks: Record<string, TaskState> = {};
   private tokenLimit = 128000;
   private debug = false;
+  private verbose = false;
+  private verboseIncludeScreenshots = false;
   private browserProvider: T extends "Serverless"
     ? ServerlessBrowserProvider
     : T extends "Remote"
@@ -59,7 +61,7 @@ export class BrowserAgent<T extends BrowserProviders = "Local"> {
     this._currentPage = page;
   }
 
-  constructor(params: BrowserAgentConfig<T> = {}) {
+  constructor(params: BrowserAgentConfig<T>) {
     if (!params.llm) {
       throw new BrowserAgentError("No LLM provider provided", 400);
     }
@@ -83,6 +85,8 @@ export class BrowserAgent<T extends BrowserProviders = "Local"> {
     }
 
     this.debug = params.debug ?? false;
+    this.verbose = params.verbose ?? false;
+    this.verboseIncludeScreenshots = params.verboseIncludeScreenshots ?? false;
     this.errorEmitter = new ErrorEmitter();
   }
 
@@ -314,6 +318,8 @@ export class BrowserAgent<T extends BrowserProviders = "Local"> {
         actions: this.getActions(params?.outputSchema),
         tokenLimit: this.tokenLimit,
         debug: this.debug,
+        verbose: this.verbose,
+        verboseIncludeScreenshots: this.verboseIncludeScreenshots,
         variables: this._variables,
       },
       taskState,
@@ -363,6 +369,8 @@ export class BrowserAgent<T extends BrowserProviders = "Local"> {
           actions: this.getActions(params?.outputSchema),
           tokenLimit: this.tokenLimit,
           debug: this.debug,
+          verbose: this.verbose,
+          verboseIncludeScreenshots: this.verboseIncludeScreenshots,
           variables: this._variables,
         },
         taskState,

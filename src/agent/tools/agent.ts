@@ -32,6 +32,7 @@ import { DOMState } from "@/context-providers/dom/types";
 import { Page } from "playwright";
 import { ActionNotFoundError } from "../actions";
 import { AgentCtx } from "./types";
+import { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import mergeImages from "merge-images";
 import { Canvas, Image } from "canvas";
 import { BaseCallbackHandler } from "@langchain/core/callbacks/base";
@@ -77,6 +78,14 @@ const compositeScreenshot = async (page: Page, overlay: string) => {
   return base64Result;
 };
 
+function isGoogleModel(llm: BaseChatModel): boolean {
+  const name = llm.getName();
+  return (
+    name === "ChatGoogleGenerativeAI" ||
+    name === "chat-google-generative-ai"
+  );
+}
+
 const getActionSchema = (actions: Array<AgentActionDefinition>) => {
   const zodDefs = actions.map((action) =>
     z.object({
@@ -90,6 +99,63 @@ const getActionSchema = (actions: Array<AgentActionDefinition>) => {
     })
   );
   return z.union([zodDefs[0], zodDefs[1], ...zodDefs.splice(2)]);
+};
+
+/**
+ * Builds a flat action schema compatible with Google Gemini's API,
+ * which does not support `anyOf` / `oneOf` in tool declarations.
+ * All action types share a single z.object with an enum `type` discriminator
+ * and merged optional params.
+ */
+const getActionSchemaFlat = (actions: Array<AgentActionDefinition>) => {
+  const actionTypes = actions.map((a) => a.type) as [string, ...string[]];
+
+  const actionParamDescriptions = actions.map((action) => {
+    const shape = (action.actionParams as z.AnyZodObject).shape;
+    const entries = Object.entries(shape);
+    const actionDesc = action.actionParams.description || "";
+    if (entries.length === 0) {
+      return `"${action.type}": ${actionDesc} (no params needed)`;
+    }
+    const paramDescs = entries.map(([key, schema]) => {
+      const desc = (schema as z.ZodTypeAny).description || "";
+      return `${key} - ${desc}`;
+    });
+    return `"${action.type}": ${actionDesc}. Params: { ${paramDescs.join(", ")} }`;
+  });
+
+  const mergedParams: Record<string, z.ZodTypeAny> = {};
+  for (const action of actions) {
+    const shape = (action.actionParams as z.AnyZodObject).shape;
+    for (const [key, schema] of Object.entries(shape)) {
+      if (!mergedParams[key]) {
+        let base = schema as z.ZodTypeAny;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if ((base as any)._def?.typeName === "ZodNullable") {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          base = (base as any)._def.innerType;
+        }
+        mergedParams[key] = base.optional();
+      }
+    }
+  }
+
+  return z.object({
+    type: z
+      .enum(actionTypes)
+      .describe(
+        "The action type to perform. Available actions: " +
+          actionParamDescriptions.join(". ")
+      ),
+    params: z
+      .object(mergedParams)
+      .describe("Parameters for the chosen action type"),
+    actionDescription: z
+      .string()
+      .describe(
+        "Describe why you are performing this action and what you aim to perform with this action."
+      ),
+  });
 };
 
 const getActionHandler = (
@@ -136,6 +202,27 @@ const runAction = async (
   }
 };
 
+/**
+ * Emit a structured verbose log line. Uses console.log so it shows up in
+ * serverless log streams (e.g. AWS CloudWatch) with a stable `[browser-agent]`
+ * prefix and a JSON payload that is easy to grep/filter.
+ */
+const verboseLog = (
+  taskId: string,
+  event: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  payload: Record<string, any>
+): void => {
+  try {
+    console.log(
+      `[browser-agent] ${JSON.stringify({ taskId, event, ...payload })}`
+    );
+  } catch {
+    // Fallback in case payload can't be serialized (e.g. circular refs)
+    console.log(`[browser-agent] ${taskId} ${event}`, payload);
+  }
+};
+
 export const runAgentTask = async (
   ctx: AgentCtx,
   taskState: TaskState,
@@ -146,6 +233,12 @@ export const runAgentTask = async (
   if (ctx.debug) {
     console.log(`Debugging task ${taskId} in ${debugDir}`);
   }
+  if (ctx.verbose) {
+    verboseLog(taskId, "task_start", {
+      task: taskState.task,
+      maxSteps: params?.maxSteps,
+    });
+  }
   if (!taskState) {
     throw new BrowserAgentError(`Task ${taskId} not found`);
   }
@@ -154,8 +247,11 @@ export const runAgentTask = async (
   if (!ctx.llm) {
     throw new BrowserAgentError("LLM not initialized");
   }
+  const actionSchema = isGoogleModel(ctx.llm)
+    ? getActionSchemaFlat(ctx.actions)
+    : getActionSchema(ctx.actions);
   const llmStructured = ctx.llm.withStructuredOutput(
-    AgentOutputFn(getActionSchema(ctx.actions)),
+    AgentOutputFn(actionSchema),
     {
       method: getStructuredOutputMethod(ctx.llm),
     }
@@ -209,6 +305,18 @@ export const runAgentTask = async (
         );
       }
     }
+    if (ctx.verbose) {
+      verboseLog(taskId, "dom_state", {
+        step: currStep,
+        elems: domState.domState,
+      });
+      if (trimmedScreenshot && ctx.verboseIncludeScreenshots) {
+        verboseLog(taskId, "screenshot", {
+          step: currStep,
+          screenshotBase64: trimmedScreenshot,
+        });
+      }
+    }
 
     // Build Agent Step Messages
     const msgs = await buildAgentStepMessages(
@@ -227,6 +335,9 @@ export const runAgentTask = async (
         `${debugStepDir}/msgs.json`,
         JSON.stringify(msgs, null, 2)
       );
+    }
+    if (ctx.verbose) {
+      verboseLog(taskId, "msgs", { step: currStep, msgs });
     }
 
     // Create token tracking callback handler
@@ -293,6 +404,9 @@ export const runAgentTask = async (
         JSON.stringify(step, null, 2)
       );
     }
+    if (ctx.verbose) {
+      verboseLog(taskId, "step_output", { step: currStep, stepOutput: step });
+    }
   }
 
   const taskOutput: TaskOutput = {
@@ -305,6 +419,9 @@ export const runAgentTask = async (
       `${debugDir}/taskOutput.json`,
       JSON.stringify(taskOutput, null, 2)
     );
+  }
+  if (ctx.verbose) {
+    verboseLog(taskId, "task_output", { taskOutput });
   }
   await params?.onComplete?.(taskOutput);
   return taskOutput;

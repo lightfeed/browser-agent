@@ -7,4 +7,10 @@ abstract class BrowserProvider<T> {
   abstract getSession(): T | null;
 }
 
+export const BrowserProviderType = {
+  Local: "Local",
+  Remote: "Remote",
+  Serverless: "Serverless",
+} as const;
+
 export default BrowserProvider;

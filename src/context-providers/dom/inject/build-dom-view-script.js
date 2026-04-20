@@ -100,7 +100,57 @@
     if (isDraggable) {
       return { isInteractive: true, reason: "Is draggable" };
     }
+    for (const selector of getHoverPointerSelectors()) {
+      try {
+        if (element.matches(selector)) {
+          return { isInteractive: true, reason: "Has cursor: pointer on hover" };
+        }
+      } catch {
+      }
+    }
     return { isInteractive: false, reason: "Not interactive" };
+  };
+  var _hoverPointerSelectorsCache = null;
+  var getHoverPointerSelectors = () => {
+    if (_hoverPointerSelectorsCache !== null) {
+      return _hoverPointerSelectorsCache;
+    }
+    const selectors = [];
+    const visitRules = (rules) => {
+      for (let i = 0; i < rules.length; i++) {
+        const rule = rules[i];
+        const groupingRules = rule.cssRules;
+        if (groupingRules) {
+          try {
+            visitRules(groupingRules);
+          } catch {
+          }
+        }
+        const styleRule = rule;
+        if (!styleRule.selectorText || !styleRule.style || styleRule.style.cursor !== "pointer") {
+          continue;
+        }
+        const segments = styleRule.selectorText.split(",");
+        for (const raw of segments) {
+          const segment = raw.trim();
+          if (!segment.includes(":hover")) continue;
+          const base = segment.replace(/:hover\b/g, "").trim();
+          if (base) selectors.push(base);
+        }
+      }
+    };
+    for (let i = 0; i < document.styleSheets.length; i++) {
+      const sheet = document.styleSheets[i];
+      let rules = null;
+      try {
+        rules = sheet.cssRules;
+      } catch {
+        continue;
+      }
+      if (rules) visitRules(rules);
+    }
+    _hoverPointerSelectorsCache = selectors;
+    return selectors;
   };
   var isIgnoredElem = (element) => {
     const rect = element.getBoundingClientRect();

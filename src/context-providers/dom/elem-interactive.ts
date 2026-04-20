@@ -74,7 +74,93 @@ export const isInteractiveElem = (
     return { isInteractive: true, reason: "Is draggable" };
   }
 
+  // Many sites (especially older WordPress / jQuery themes) attach click
+  // handlers to plain `<div>` elements without setting any role / aria
+  // attribute, and only set `cursor: pointer` on `:hover`. Their click
+  // handlers are typically attached via event delegation, so the
+  // `data-has-interactive-listener` marker above doesn't fire either.
+  //
+  // To recover those, we walk the page's stylesheets once and collect every
+  // selector that sets `cursor: pointer` inside a `:hover` rule, then check
+  // whether the element matches any of those selectors.
+  for (const selector of getHoverPointerSelectors()) {
+    try {
+      if (element.matches(selector)) {
+        return { isInteractive: true, reason: "Has cursor: pointer on hover" };
+      }
+    } catch {
+      // Invalid selector (e.g. `:has()` in older browsers) — skip.
+    }
+  }
+
   return { isInteractive: false, reason: "Not interactive" };
+};
+
+/**
+ * Walks every accessible stylesheet on the page and returns the list of base
+ * selectors (with `:hover` stripped) whose `:hover` rule sets
+ * `cursor: pointer`. Cached across calls so we only pay the CSSOM walk once
+ * per injected script execution.
+ *
+ * Cross-origin stylesheets throw on `cssRules` access — those are silently
+ * skipped, which means we miss buttons styled by 3rd-party CSS, but that is
+ * an acceptable trade-off (and very rare for primary page content).
+ */
+let _hoverPointerSelectorsCache: string[] | null = null;
+const getHoverPointerSelectors = (): string[] => {
+  if (_hoverPointerSelectorsCache !== null) {
+    return _hoverPointerSelectorsCache;
+  }
+  const selectors: string[] = [];
+
+  const visitRules = (rules: CSSRuleList) => {
+    for (let i = 0; i < rules.length; i++) {
+      const rule = rules[i];
+      // Descend into @media / @supports / etc. (CSSGroupingRule).
+      const groupingRules = (rule as unknown as { cssRules?: CSSRuleList })
+        .cssRules;
+      if (groupingRules) {
+        try {
+          visitRules(groupingRules);
+        } catch {
+          // Some grouping rule types throw on access — skip.
+        }
+      }
+      const styleRule = rule as CSSStyleRule;
+      if (
+        !styleRule.selectorText ||
+        !styleRule.style ||
+        styleRule.style.cursor !== "pointer"
+      ) {
+        continue;
+      }
+      // A rule's selectorText may be a comma-separated list, e.g.
+      // ".btn:hover, .card:hover, .footer-link". Split, keep only the
+      // segments that contain :hover, strip :hover from each, and re-emit.
+      const segments = styleRule.selectorText.split(",");
+      for (const raw of segments) {
+        const segment = raw.trim();
+        if (!segment.includes(":hover")) continue;
+        const base = segment.replace(/:hover\b/g, "").trim();
+        if (base) selectors.push(base);
+      }
+    }
+  };
+
+  for (let i = 0; i < document.styleSheets.length; i++) {
+    const sheet = document.styleSheets[i];
+    let rules: CSSRuleList | null = null;
+    try {
+      rules = sheet.cssRules;
+    } catch {
+      // Cross-origin stylesheet — skip.
+      continue;
+    }
+    if (rules) visitRules(rules);
+  }
+
+  _hoverPointerSelectorsCache = selectors;
+  return selectors;
 };
 
 export const isIgnoredElem = (element: HTMLElement): boolean => {

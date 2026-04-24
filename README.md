@@ -107,6 +107,8 @@ browser-agent-cli replay ./hn.plan.json \
 # Self-heal drifted steps during replay (independent of the finish pass).
 browser-agent-cli replay ./hn.plan.json --ai-fallback
 ```
+<img width="836" height="658" alt="Screenshot 2026-04-24 at 1 54 50 AM" src="https://github.com/user-attachments/assets/d7c159d6-e5dd-4427-95ab-c7c4ec7ff522" />
+
 
 LLM auto-detected from `GOOGLE_API_KEY` / `GEMINI_API_KEY` → `OPENAI_API_KEY` → `ANTHROPIC_API_KEY`. Override the model with `--llm-model` or `GEMINI_MODEL` / `OPENAI_MODEL` / `ANTHROPIC_MODEL`. `replay` only needs an LLM with `--ai-fallback`. Interactive: `ctrl+p` pause, `ctrl+r` resume.
 

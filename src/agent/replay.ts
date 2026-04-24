@@ -15,7 +15,6 @@ import {
 import { DOMState, InteractiveElement } from "@/context-providers/dom/types";
 import { BrowserAgentError } from "./error";
 import { sleep } from "@/utils";
-import { normalizeXpath } from "./actions/utils";
 
 const PLAN_VERSION = 1 as const;
 
@@ -219,9 +218,7 @@ export async function replayPlan(
         action.resolvedLocator.cssPath
           ? page.locator(action.resolvedLocator.cssPath)
           : action.resolvedLocator.xpath
-            ? page.locator(
-                `xpath=${normalizeXpath(action.resolvedLocator.xpath)}`
-              )
+            ? page.locator(`xpath=${action.resolvedLocator.xpath}`)
             : page.locator(action.resolvedLocator.cssPath);
       try {
         await waitLocator.first().waitFor({

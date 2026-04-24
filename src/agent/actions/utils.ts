@@ -12,7 +12,7 @@ export function getLocator(ctx: ActionContext, index: number) {
   if (element.isUnderShadowRoot) {
     return ctx.page.locator(element.cssPath);
   } else {
-    return ctx.page.locator(`xpath=${normalizeXpath(element.xpath)}`);
+    return ctx.page.locator(`xpath=${element.xpath}`);
   }
 }
 
@@ -45,11 +45,9 @@ export function resolveLocator(
       selector.startsWith("/") ||
       selector.startsWith("(");
     if (isXpath) {
-      const xpath = normalizeXpath(
-        selector.startsWith("xpath=")
-          ? selector.slice("xpath=".length)
-          : selector
-      );
+      const xpath = selector.startsWith("xpath=")
+        ? selector.slice("xpath=".length)
+        : selector;
       const resolved: ResolvedLocator = {
         xpath,
         cssPath: "",
@@ -79,23 +77,7 @@ export function locatorFromResolved(
     return page.locator(resolved.cssPath);
   }
   if (resolved.xpath) {
-    return page.locator(`xpath=${normalizeXpath(resolved.xpath)}`);
+    return page.locator(`xpath=${resolved.xpath}`);
   }
   return page.locator(resolved.cssPath);
-}
-
-/**
- * Ensure an xpath can be evaluated by Playwright's strict XPath engine: the
- * engine expects an absolute path (`/html/...`) or a search (`//div[...]`).
- * Our DOM collector emits paths like `html/body/...` without a leading slash
- * which works with some engines but fails intermittently in Playwright /
- * Patchright during replay.
- */
-export function normalizeXpath(xpath: string): string {
-  const trimmed = xpath.trim();
-  if (!trimmed) return trimmed;
-  if (trimmed.startsWith("/") || trimmed.startsWith("(")) {
-    return trimmed;
-  }
-  return `/${trimmed}`;
 }

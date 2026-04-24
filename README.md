@@ -83,8 +83,9 @@ browser-agent-cli replay ./hn.plan.json
 # Replay with self-healing AI fallback only for drifted steps
 browser-agent-cli replay ./hn.plan.json --ai-fallback
 
-# Override the starting URL (useful for older plans or staging hosts)
-browser-agent-cli replay ./hn.plan.json --url https://news.ycombinator.com/
+# Retarget the plan against a different URL (e.g. staging, a preview deploy,
+# or a different query). The recorded clicks / types still run as-is.
+browser-agent-cli replay ./hn.plan.json --url https://staging.example.com/
 
 # Enable verbose debug output
 browser-agent-cli run -d -c "..."
@@ -106,7 +107,7 @@ browser-agent-cli run -d -c "..."
 | `run`    | `--llm-model <model>`      | Override the auto-detected LLM model.                                                |
 | `run`    | `-d, --debug`              | Enable verbose debug output (screenshots, DOM dumps per step).                       |
 | `replay` | `--ai-fallback`            | Re-plan a single step via `.ai()` when its selector no longer matches.               |
-| `replay` | `-u, --url <url>`          | Override the plan's recorded `startingUrl`.                                          |
+| `replay` | `-u, --url <url>`          | Retarget the plan at a different starting URL (e.g. staging or a preview deploy).    |
 | `replay` | `-d, --debug`              | Enable verbose debug output.                                                         |
 
 ## Record and Replay (the main differentiator)
@@ -203,7 +204,7 @@ You still pay tokens only for the drifted step — the rest of the plan remains 
 | `aiFallbackTask` | `(action) => string`                                         | auto    | Customise the prompt used by the fallback.                                                       |
 | `onStep`         | `(action, output) => void \| Promise<void>`                  | —       | Observe each replayed action.                                                                    |
 | `onError`        | `(action, err) => "abort" \| "skip" \| Promise<…>`           | `abort` | Custom failure handling.                                                                         |
-| `startingUrl`    | `string`                                                     | —       | Override the plan's recorded `startingUrl`. Useful for older plans or to run on a staging host.  |
+| `startingUrl`    | `string`                                                     | —       | Retarget the plan at a different starting URL (e.g. staging, preview deploy, different query).   |
 | `stepTimeoutMs`  | `number`                                                     | `10000` | Per-step visibility wait.                                                                        |
 | `variables`      | `Record<string, AgentVariable>`                              | —       | Variable overrides for parameterised plans.                                                      |
 
@@ -213,7 +214,7 @@ Everything above is available without writing code — see the [CLI section](#cl
 
 ### Plan JSON format
 
-Plans are human-readable and safe to hand-edit — swap `startingUrl` to retarget a different host, tweak an `inputText` value, reorder steps, delete an unwanted step.
+Plans are human-readable and safe to hand-edit — point `startingUrl` at staging, tweak an `inputText` value, reorder steps, delete an unwanted step.
 
 ```json
 {
@@ -241,7 +242,7 @@ Plans are human-readable and safe to hand-edit — swap `startingUrl` to retarge
 | `version`          | Schema version for future migrations. Only `1` exists today.                                                                                              |
 | `task`             | The original natural-language task. Used for the `aiFallback` prompt unless `aiFallbackTask` is provided.                                                 |
 | `createdAt`        | ISO-8601 timestamp when the plan was saved.                                                                                                               |
-| `startingUrl`      | URL the recording page was on when the task started. Replay navigates here automatically unless the first step is itself a `goToUrl`.                     |
+| `startingUrl`      | URL the recording page was on when the task started, captured automatically. Replay navigates here before step 0. **Optional** — absent when the recording started on `about:blank` (in which case the first step is itself a `goToUrl` and handles navigation). Override at replay time via `ReplayOptions.startingUrl` or `--url`. |
 | `output`           | The LLM's final answer from the recording run, if any. Informational only; not used at replay time.                                                       |
 | `steps[]`          | Flat list of action-level steps — a single recorded `.ai()` call can produce multiple steps.                                                              |
 | `steps[].type`     | Action name: `goToUrl`, `clickElement`, `inputText`, `selectOptionByText`, `scrollDirection`, `keyPress`, `back`, `forward`, `refresh`, custom action, …  |

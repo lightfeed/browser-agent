@@ -33,7 +33,7 @@ import { BrowserAgentError } from "@/agent/error";
  */
 async function loadProvider<T>(
   packageName: string,
-  providerLabel: string
+  providerLabel: string,
 ): Promise<T> {
   try {
     return (await import(packageName)) as T;
@@ -45,8 +45,8 @@ async function loadProvider<T>(
         chalk.red(
           `${providerLabel} provider is not installed.\n` +
             `Install it and retry:\n\n` +
-            `  npm install -g ${packageName}\n`
-        )
+            `  npm install -g ${packageName}\n`,
+        ),
       );
       process.exit(1);
     }
@@ -56,21 +56,11 @@ async function loadProvider<T>(
 
 /**
  * Select an LLM based on environment variables. Providers are checked in
- * priority order: OpenAI, Google, Anthropic. Per-provider model is
+ * priority order: Google, OpenAI, Anthropic. Per-provider model is
  * configurable via `*_MODEL` env vars. Dynamic imports keep unused provider
  * SDKs out of the CLI startup path.
  */
 async function createDefaultLlm(): Promise<BaseChatModel | undefined> {
-  if (process.env.OPENAI_API_KEY) {
-    const { ChatOpenAI } = await loadProvider<
-      typeof import("@langchain/openai")
-    >("@langchain/openai", "OpenAI");
-    return new ChatOpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-      model: process.env.OPENAI_MODEL ?? "gpt-4.1-mini",
-      temperature: 0,
-    }) as unknown as BaseChatModel;
-  }
   if (process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY) {
     const { ChatGoogleGenerativeAI } = await loadProvider<
       typeof import("@langchain/google-genai")
@@ -81,14 +71,23 @@ async function createDefaultLlm(): Promise<BaseChatModel | undefined> {
       temperature: 0,
     }) as unknown as BaseChatModel;
   }
+  if (process.env.OPENAI_API_KEY) {
+    const { ChatOpenAI } = await loadProvider<
+      typeof import("@langchain/openai")
+    >("@langchain/openai", "OpenAI");
+    return new ChatOpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+      model: process.env.OPENAI_MODEL ?? "gpt-4.1-mini",
+      temperature: 0,
+    }) as unknown as BaseChatModel;
+  }
   if (process.env.ANTHROPIC_API_KEY) {
     const { ChatAnthropic } = await loadProvider<
       typeof import("@langchain/anthropic")
     >("@langchain/anthropic", "Anthropic");
     return new ChatAnthropic({
       apiKey: process.env.ANTHROPIC_API_KEY,
-      model:
-        process.env.ANTHROPIC_MODEL ?? "claude-3-5-sonnet-20241022",
+      model: process.env.ANTHROPIC_MODEL ?? "claude-3-5-sonnet-20241022",
       temperature: 0,
     }) as unknown as BaseChatModel;
   }
@@ -112,11 +111,11 @@ program
   .option("-f, --file <file path>", "Path to a file containing a command")
   .option(
     "-s, --save-plan <file path>",
-    "Persist the recorded plan to <file path> on task completion for later replay"
+    "Persist the recorded plan to <file path> on task completion for later replay",
   )
   .option(
     "--llm-model <model>",
-    "Override the LLM model (applied to whichever provider is auto-detected from env vars)"
+    "Override the LLM model (applied to whichever provider is auto-detected from env vars)",
   )
   .action(async function () {
     const options = this.opts();
@@ -128,13 +127,14 @@ program
 
     console.log(chalk.blue("BrowserAgent CLI"));
     currentSpinner.info(
-      `Pause using ${chalk.bold("ctrl + p")} and resume using ${chalk.bold("ctrl + r")}\n`
+      `Pause using ${chalk.bold("ctrl + p")} and resume using ${chalk.bold("ctrl + r")}\n`,
     );
 
     if (llmModelOverride) {
-      if (process.env.OPENAI_API_KEY) process.env.OPENAI_MODEL = llmModelOverride;
-      else if (process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY)
+      if (process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY)
         process.env.GEMINI_MODEL = llmModelOverride;
+      else if (process.env.OPENAI_API_KEY)
+        process.env.OPENAI_MODEL = llmModelOverride;
       else if (process.env.ANTHROPIC_API_KEY)
         process.env.ANTHROPIC_MODEL = llmModelOverride;
     }
@@ -143,8 +143,8 @@ program
     if (!llm) {
       console.error(
         chalk.red(
-          "No LLM provider configured. Set one of OPENAI_API_KEY, GOOGLE_API_KEY (or GEMINI_API_KEY), or ANTHROPIC_API_KEY."
-        )
+          "No LLM provider configured. Set one of GOOGLE_API_KEY (or GEMINI_API_KEY), OPENAI_API_KEY, or ANTHROPIC_API_KEY.",
+        ),
       );
       process.exit(1);
     }
@@ -181,8 +181,8 @@ program
                 } else if (kind === "password") {
                   console.warn(
                     chalk.red(
-                      "Providing passwords to LLMs can be dangerous. Passwords are passed in plain-text to the LLM and can be read by other people."
-                    )
+                      "Providing passwords to LLMs can be dangerous. Passwords are passed in plain-text to the LLM and can be read by other people.",
+                    ),
                   );
                   const response = await inquirer.password({
                     message,
@@ -215,7 +215,7 @@ program
               } finally {
                 currentSpinner.start(currentText);
               }
-            }
+            },
           ),
         ],
       });
@@ -231,8 +231,8 @@ program
           }
           currentSpinner.start(
             chalk.blue(
-              "BrowserAgent will pause after completing this operation. Press Ctrl+r again to resume."
-            )
+              "BrowserAgent will pause after completing this operation. Press Ctrl+r again to resume.",
+            ),
           );
           currentSpinner.stopAndPersist({ symbol: "⏸" });
           currentSpinner = ora();
@@ -272,19 +272,19 @@ program
           (output, action) => ({
             output,
             action,
-          })
+          }),
         );
 
         const actions = actionsList
           .map((action, index, array) =>
             index < array.length - 1
               ? `  ├── [${action.output.success ? chalk.yellow(action.action.type) : chalk.red(action.action.type)}] ${action.output.success ? agent.pprintAction(action.action as ActionType) : chalk.red(action.output.message)}`
-              : `  └── [${action.output.success ? chalk.yellow(action.action.type) : chalk.red(action.action.type)}] ${action.output.success ? agent.pprintAction(action.action as ActionType) : chalk.red(action.output.message)}`
+              : `  └── [${action.output.success ? chalk.yellow(action.action.type) : chalk.red(action.action.type)}] ${action.output.success ? agent.pprintAction(action.action as ActionType) : chalk.red(action.output.message)}`,
           )
           .join("\n");
 
         currentSpinner.succeed(
-          `[${chalk.yellow("task")}]: ${params.agentOutput.nextGoal}\n${actions}`
+          `[${chalk.yellow("task")}]: ${params.agentOutput.nextGoal}\n${actions}`,
         );
         currentSpinner = ora();
         process.stdin.setRawMode(true);
@@ -295,10 +295,10 @@ program
         const actions = params.actions.map((action, index, array) =>
           index < array.length - 1
             ? `  ├── [${chalk.yellow(action.type)}] ${agent.pprintAction(action as ActionType)}`
-            : `  └── [${chalk.yellow(action.type)}] ${agent.pprintAction(action as ActionType)}`
+            : `  └── [${chalk.yellow(action.type)}] ${agent.pprintAction(action as ActionType)}`,
         );
         currentSpinner.start(
-          `[${chalk.yellow("task")}]: ${params.nextGoal}\n${actions.join("\n")}`
+          `[${chalk.yellow("task")}]: ${params.nextGoal}\n${actions.join("\n")}`,
         );
         process.stdin.setRawMode(true);
         process.stdin.resume();
@@ -312,19 +312,17 @@ program
             float: "center",
             padding: 1,
             margin: { top: 2, left: 0, right: 0, bottom: 0 },
-          })
+          }),
         );
         if (savePlanPath && taskDescription) {
           try {
             await agent.savePlan(taskDescription, params, savePlanPath);
-            console.log(
-              chalk.green(`\nSaved plan to ${savePlanPath}`)
-            );
+            console.log(chalk.green(`\nSaved plan to ${savePlanPath}`));
           } catch (err) {
             console.log(
               chalk.red(
-                `\nFailed to save plan: ${err instanceof Error ? err.message : String(err)}`
-              )
+                `\nFailed to save plan: ${err instanceof Error ? err.message : String(err)}`,
+              ),
             );
           }
         }
@@ -396,15 +394,18 @@ program
 program
   .command("replay")
   .description("Replay a saved plan without calling the LLM")
-  .argument("<file>", "Path to a plan JSON file previously saved with --save-plan")
+  .argument(
+    "<file>",
+    "Path to a plan JSON file previously saved with --save-plan",
+  )
   .option("-d, --debug", "Enable debug mode")
   .option(
     "--ai-fallback",
-    "Fall back to .ai() for individual steps that fail (requires an LLM to be configured)"
+    "Fall back to .ai() for individual steps that fail (requires an LLM to be configured)",
   )
   .option(
     "-u, --url <url>",
-    "Starting URL to navigate to before running the plan (overrides the plan's recorded startingUrl)"
+    "Starting URL to navigate to before running the plan (overrides the plan's recorded startingUrl)",
   )
   .action(async function (file: string) {
     const options = this.opts();
@@ -420,8 +421,8 @@ program
       if (aiFallback && !llm) {
         console.error(
           chalk.red(
-            "--ai-fallback requires an LLM. Set one of OPENAI_API_KEY, GOOGLE_API_KEY (or GEMINI_API_KEY), or ANTHROPIC_API_KEY."
-          )
+            "--ai-fallback requires an LLM. Set one of GOOGLE_API_KEY (or GEMINI_API_KEY), OPENAI_API_KEY, or ANTHROPIC_API_KEY.",
+          ),
         );
         process.exit(1);
       }
@@ -445,14 +446,12 @@ program
             params: action.params as object,
           });
           spinner.succeed(
-            `[${chalk.yellow(action.type)}] ${label || output.message}`
+            `[${chalk.yellow(action.type)}] ${label || output.message}`,
           );
           spinner.start("Continuing replay...");
         },
         onError: (action, err) => {
-          spinner.fail(
-            `[${chalk.red(action.type)}] ${err.message}`
-          );
+          spinner.fail(`[${chalk.red(action.type)}] ${err.message}`);
           return "abort";
         },
       });

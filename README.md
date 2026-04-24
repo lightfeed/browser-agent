@@ -115,7 +115,7 @@ browser-agent-cli replay ./yc.plan.json --ai-fallback
 browser-agent-cli replay ./yc.plan.json --url https://staging.example.com/
 ```
 
-LLM auto-detected from `OPENAI_API_KEY` → `GOOGLE_API_KEY` / `GEMINI_API_KEY` → `ANTHROPIC_API_KEY`. Override the model with `--llm-model` or `OPENAI_MODEL` / `GEMINI_MODEL` / `ANTHROPIC_MODEL`. `replay` only needs an LLM with `--ai-fallback`. Interactive: `ctrl+p` pause, `ctrl+r` resume.
+LLM auto-detected from `GOOGLE_API_KEY` / `GEMINI_API_KEY` → `OPENAI_API_KEY` → `ANTHROPIC_API_KEY`. Override the model with `--llm-model` or `GEMINI_MODEL` / `OPENAI_MODEL` / `ANTHROPIC_MODEL`. `replay` only needs an LLM with `--ai-fallback`. Interactive: `ctrl+p` pause, `ctrl+r` resume.
 
 ## Browser providers
 

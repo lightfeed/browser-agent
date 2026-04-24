@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ActionContext, AgentActionDefinition } from "@/types";
-import { getLocator } from "./utils";
+import { resolveLocator } from "./utils";
 
 export const InputTextAction = z
   .object({
@@ -17,18 +17,21 @@ export const InputTextActionDefinition: AgentActionDefinition = {
     type: "inputText" as const,
     actionParams: InputTextAction,
     run: async (ctx: ActionContext, action: InputTextActionType) => {
-      let { index, text } = action;
-      const locator = getLocator(ctx, index);
+      let { text } = action;
+      const { index } = action;
+      const resolved = resolveLocator(ctx, index);
       for (const variable of ctx.variables) {
         text = text.replace(`<<${variable.key}>>`, variable.value);
       }
-      if (!locator) {
+      if (!resolved) {
         return { success: false, message: "Element not found" };
       }
+      const { locator, resolved: resolvedLocator } = resolved;
       await locator.fill(text, { timeout: 5_000 });
       return {
         success: true,
         message: `Inputted text "${text}" into element with index ${index}`,
+        resolvedLocator,
       };
     },
     pprintAction: function (params: InputTextActionType): string {

@@ -4,9 +4,14 @@ import { v4 as uuidv4 } from "uuid";
 
 import { BrowserProviders, BrowserAgentConfig } from "@/types/config";
 import {
+  ActionContext,
+  ActionOutput,
   ActionType,
   AgentActionDefinition,
+  AgentPlan,
   endTaskStatuses,
+  ReplayOptions,
+  ResolvedLocator,
   Task,
   TaskOutput,
   TaskParams,
@@ -28,9 +33,16 @@ import { runAgentTask } from "./tools/agent";
 import { AgentPage, AgentVariable } from "@/types/agent/types";
 import { z } from "zod";
 import { ErrorEmitter } from "@/utils";
+import {
+  loadPlanFromFile,
+  replayPlan as replayPlanInternal,
+  savePlanToFile,
+  taskOutputToPlan,
+} from "./replay";
+import { DOMState, InteractiveElement } from "@/context-providers/dom/types";
 
 export class BrowserAgent<T extends BrowserProviders = "Local"> {
-  private llm: BaseChatModel;
+  private llm?: BaseChatModel;
   private tasks: Record<string, TaskState> = {};
   private tokenLimit = 128000;
   private debug = false;
@@ -62,9 +74,6 @@ export class BrowserAgent<T extends BrowserProviders = "Local"> {
   }
 
   constructor(params: BrowserAgentConfig<T>) {
-    if (!params.llm) {
-      throw new BrowserAgentError("No LLM provider provided", 400);
-    }
     this.llm = params.llm;
     this.browserProviderType = (params.browserProvider ?? "Local") as T;
 
@@ -302,6 +311,12 @@ export class BrowserAgent<T extends BrowserProviders = "Local"> {
     params?: TaskParams,
     initPage?: Page
   ): Promise<Task> {
+    if (!this.llm) {
+      throw new BrowserAgentError(
+        "No LLM provider configured. Pass `llm` to BrowserAgent to use .ai() / .aiAsync() / .extract().",
+        400
+      );
+    }
     const taskId = uuidv4();
     const page = initPage || (await this.getCurrentPage());
     const taskState: TaskState = {
@@ -352,6 +367,12 @@ export class BrowserAgent<T extends BrowserProviders = "Local"> {
     params?: TaskParams,
     initPage?: Page
   ): Promise<TaskOutput> {
+    if (!this.llm) {
+      throw new BrowserAgentError(
+        "No LLM provider configured. Pass `llm` to BrowserAgent to use .ai() / .aiAsync() / .extract().",
+        400
+      );
+    }
     const taskId = uuidv4();
     const page = initPage || (await this.getCurrentPage());
     const taskState: TaskState = {
@@ -428,12 +449,176 @@ export class BrowserAgent<T extends BrowserProviders = "Local"> {
     return session;
   }
 
+  /**
+   * Flatten a TaskOutput into a portable AgentPlan and optionally persist it
+   * to disk. Replayable without an LLM via `agent.replay(...)`.
+   */
+  public async savePlan(
+    task: string,
+    output: TaskOutput,
+    filePath?: string
+  ): Promise<AgentPlan> {
+    if (filePath) {
+      return savePlanToFile(task, output, filePath);
+    }
+    return taskOutputToPlan(task, output);
+  }
+
+  /**
+   * Deterministically replay a previously recorded AgentPlan without
+   * contacting an LLM. If the plan is passed as a string it is loaded from
+   * disk. Pass `opts.aiFallback = true` to fall back to `.ai()` for any
+   * individual action that fails (requires an `llm` to be configured).
+   */
+  public async replay(
+    plan: AgentPlan | string,
+    opts: ReplayOptions = {}
+  ): Promise<void> {
+    const resolvedPlan =
+      typeof plan === "string" ? await loadPlanFromFile(plan) : plan;
+    const page = opts.page ?? (await this.getCurrentPage());
+    const aiRunner = opts.aiFallback
+      ? async (p: Page, t: string) => {
+          if (!this.llm) {
+            throw new BrowserAgentError(
+              "aiFallback requires `llm` to be configured on BrowserAgent.",
+              400
+            );
+          }
+          await this.executeTask(t, { maxSteps: 3 }, p);
+        }
+      : undefined;
+
+    await replayPlanInternal(
+      {
+        page,
+        actions: this.getActions(),
+        tokenLimit: this.tokenLimit,
+        variables: this._variables,
+        llm: this.llm,
+      },
+      resolvedPlan,
+      opts,
+      aiRunner
+    );
+  }
+
+  /**
+   * Run a single registered action against a page with a synthesized
+   * ActionContext. Accepts either an index (only meaningful if a DOM state
+   * has been recorded), a Playwright selector string, or a ResolvedLocator.
+   */
+  private async runActionDirect(
+    page: Page,
+    type: string,
+    params: Record<string, unknown>,
+    target?: number | string | ResolvedLocator
+  ): Promise<ActionOutput> {
+    const handler = this.actions.find((a) => a.type === type);
+    if (!handler) {
+      return { success: false, message: `Unknown action type "${type}"` };
+    }
+
+    let domState: DOMState = {
+      elements: new Map<number, InteractiveElement>(),
+      domState: "",
+      screenshot: "",
+    };
+    let finalParams = { ...params };
+
+    if (target !== undefined) {
+      const indexKey = 0;
+      let resolved: ResolvedLocator | null = null;
+
+      if (typeof target === "number") {
+        return {
+          success: false,
+          message:
+            "Numeric indices require a live DOM state; use a selector string or ResolvedLocator instead.",
+        };
+      } else if (typeof target === "string") {
+        const selector = target.trim();
+        const isXpath =
+          selector.startsWith("xpath=") ||
+          selector.startsWith("/") ||
+          selector.startsWith("(");
+        resolved = {
+          xpath: isXpath
+            ? selector.startsWith("xpath=")
+              ? selector.slice("xpath=".length)
+              : selector
+            : "",
+          cssPath: isXpath ? "" : selector,
+          isUnderShadowRoot: false,
+        };
+      } else {
+        resolved = target;
+      }
+
+      const elements = new Map<number, InteractiveElement>();
+      elements.set(indexKey, {
+        element: {} as HTMLElement,
+        isUnderShadowRoot: resolved.isUnderShadowRoot,
+        rect: {} as DOMRect,
+        cssPath: resolved.cssPath,
+        xpath: resolved.xpath,
+      });
+      domState = { elements, domState: "", screenshot: "" };
+      finalParams = { ...params, index: indexKey };
+    }
+
+    const actionCtx: ActionContext = {
+      page,
+      domState,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      llm: this.llm as any,
+      tokenLimit: this.tokenLimit,
+      variables: Object.values(this._variables),
+    };
+
+    try {
+      return await handler.run(actionCtx, finalParams);
+    } catch (err) {
+      return {
+        success: false,
+        message: `Action "${type}" threw: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      };
+    }
+  }
+
   private setupAgentPage(page: Page): AgentPage {
     const agentPage = page as AgentPage;
     agentPage.ai = (task: string, params?: TaskParams) =>
       this.executeTask(task, params, page);
     agentPage.aiAsync = (task: string, params?: TaskParams) =>
       this.executeTaskAsync(task, params, page);
+
+    agentPage.navigateTo = (url: string) =>
+      this.runActionDirect(page, "goToUrl", { url });
+    agentPage.clickElement = (target) =>
+      this.runActionDirect(page, "clickElement", {}, target);
+    agentPage.inputText = (target, text) =>
+      this.runActionDirect(page, "inputText", { text }, target);
+    agentPage.selectOptionByText = (target, text) =>
+      this.runActionDirect(page, "selectOption", { text }, target);
+    agentPage.scrollDirection = (direction) =>
+      this.runActionDirect(page, "scroll", { direction });
+    agentPage.keyPress = (text) =>
+      this.runActionDirect(page, "keyPress", { text });
+    agentPage.back = () => this.runActionDirect(page, "pageBack", {});
+    agentPage.forward = () => this.runActionDirect(page, "pageForward", {});
+    agentPage.refresh = () => this.runActionDirect(page, "refreshPage", {});
+
+    agentPage.savePlan = (
+      task: string,
+      output: TaskOutput,
+      filePath?: string
+    ) => this.savePlan(task, output, filePath);
+    agentPage.replay = (plan: AgentPlan | string, opts?: ReplayOptions) =>
+      this.replay(plan, { ...(opts ?? {}), page });
+
     agentPage.extract = async (task, outputSchema) => {
       if (!task && !outputSchema) {
         throw new BrowserAgentError(

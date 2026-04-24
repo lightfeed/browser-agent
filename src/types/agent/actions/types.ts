@@ -13,10 +13,17 @@ export interface ActionContext {
   debugDir?: string;
 }
 
+export interface ResolvedLocator {
+  xpath: string;
+  cssPath: string;
+  isUnderShadowRoot: boolean;
+}
+
 export interface ActionOutput {
   success: boolean;
   message: string;
   extract?: object;
+  resolvedLocator?: ResolvedLocator;
 }
 
 export type ActionSchemaType = z.ZodObject<

@@ -14,6 +14,7 @@ export const UserInteractionActionParams = z.object({
     ),
   choices: z
     .array(z.string())
+    .nullable()
     .optional()
     .describe(
       "If you select choices as the kind option, then what options should be offered to the user."

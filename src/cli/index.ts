@@ -8,6 +8,7 @@ import boxen from "boxen";
 import chalk from "chalk";
 import readline from "readline";
 import { zipWith } from "lodash";
+import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
 
 import { BrowserAgent } from "@/agent";
 import { UserInteractionAction } from "@/custom-actions";
@@ -21,6 +22,41 @@ import {
   TaskStatus,
 } from "@/types";
 import { BrowserAgentError } from "@/agent/error";
+
+/**
+ * Select an LLM based on environment variables. Providers are checked in
+ * priority order: OpenAI, Google, Anthropic. Per-provider model is
+ * configurable via `*_MODEL` env vars. Dynamic imports keep unused provider
+ * SDKs out of the CLI startup path.
+ */
+async function createDefaultLlm(): Promise<BaseChatModel | undefined> {
+  if (process.env.OPENAI_API_KEY) {
+    const { ChatOpenAI } = await import("@langchain/openai");
+    return new ChatOpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+      model: process.env.OPENAI_MODEL ?? "gpt-4.1-mini",
+      temperature: 0,
+    }) as unknown as BaseChatModel;
+  }
+  if (process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY) {
+    const { ChatGoogleGenerativeAI } = await import("@langchain/google-genai");
+    return new ChatGoogleGenerativeAI({
+      apiKey: process.env.GOOGLE_API_KEY ?? process.env.GEMINI_API_KEY,
+      model: process.env.GEMINI_MODEL ?? "gemini-2.5-flash",
+      temperature: 0,
+    }) as unknown as BaseChatModel;
+  }
+  if (process.env.ANTHROPIC_API_KEY) {
+    const { ChatAnthropic } = await import("@langchain/anthropic");
+    return new ChatAnthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY,
+      model:
+        process.env.ANTHROPIC_MODEL ?? "claude-3-5-sonnet-20241022",
+      temperature: 0,
+    }) as unknown as BaseChatModel;
+  }
+  return undefined;
+}
 
 const program = new Command();
 
@@ -37,18 +73,48 @@ program
   .option("-d, --debug", "Enable debug mode")
   .option("-c, --command <task description>", "Command to run")
   .option("-f, --file <file path>", "Path to a file containing a command")
+  .option(
+    "-s, --save-plan <file path>",
+    "Persist the recorded plan to <file path> on task completion for later replay"
+  )
+  .option(
+    "--llm-model <model>",
+    "Override the LLM model (applied to whichever provider is auto-detected from env vars)"
+  )
   .action(async function () {
     const options = this.opts();
     const debug = (options.debug as boolean) || false;
     let taskDescription = (options.command as string) || undefined;
     const filePath = (options.file as string) || undefined;
+    const savePlanPath = (options.savePlan as string) || undefined;
+    const llmModelOverride = (options.llmModel as string) || undefined;
 
     console.log(chalk.blue("BrowserAgent CLI"));
     currentSpinner.info(
       `Pause using ${chalk.bold("ctrl + p")} and resume using ${chalk.bold("ctrl + r")}\n`
     );
+
+    if (llmModelOverride) {
+      if (process.env.OPENAI_API_KEY) process.env.OPENAI_MODEL = llmModelOverride;
+      else if (process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY)
+        process.env.GEMINI_MODEL = llmModelOverride;
+      else if (process.env.ANTHROPIC_API_KEY)
+        process.env.ANTHROPIC_MODEL = llmModelOverride;
+    }
+
+    const llm = await createDefaultLlm();
+    if (!llm) {
+      console.error(
+        chalk.red(
+          "No LLM provider configured. Set one of OPENAI_API_KEY, GOOGLE_API_KEY (or GEMINI_API_KEY), or ANTHROPIC_API_KEY."
+        )
+      );
+      process.exit(1);
+    }
+
     try {
       const agent = new BrowserAgent({
+        llm,
         debug: debug,
         browserProvider: "Local",
         customActions: [
@@ -211,6 +277,20 @@ program
             margin: { top: 2, left: 0, right: 0, bottom: 0 },
           })
         );
+        if (savePlanPath && taskDescription) {
+          try {
+            await agent.savePlan(taskDescription, params, savePlanPath);
+            console.log(
+              chalk.green(`\nSaved plan to ${savePlanPath}`)
+            );
+          } catch (err) {
+            console.log(
+              chalk.red(
+                `\nFailed to save plan: ${err instanceof Error ? err.message : String(err)}`
+              )
+            );
+          }
+        }
         console.log("\n");
         const continueTask = await inquirer.select({
           message: "Would you like to continue ",
@@ -273,6 +353,94 @@ program
           console.trace(err);
         }
       }
+    }
+  });
+
+program
+  .command("replay")
+  .description("Replay a saved plan without calling the LLM")
+  .argument("<file>", "Path to a plan JSON file previously saved with --save-plan")
+  .option("-d, --debug", "Enable debug mode")
+  .option(
+    "--ai-fallback",
+    "Fall back to .ai() for individual steps that fail (requires an LLM to be configured)"
+  )
+  .option(
+    "-u, --url <url>",
+    "Starting URL to navigate to before running the plan (overrides the plan's recorded startingUrl)"
+  )
+  .action(async function (file: string) {
+    const options = this.opts();
+    const debug = (options.debug as boolean) || false;
+    const aiFallback = (options.aiFallback as boolean) || false;
+    const startingUrl = (options.url as string) || undefined;
+
+    console.log(chalk.blue("BrowserAgent Replay"));
+    const spinner = ora();
+
+    try {
+      const llm = aiFallback ? await createDefaultLlm() : undefined;
+      if (aiFallback && !llm) {
+        console.error(
+          chalk.red(
+            "--ai-fallback requires an LLM. Set one of OPENAI_API_KEY, GOOGLE_API_KEY (or GEMINI_API_KEY), or ANTHROPIC_API_KEY."
+          )
+        );
+        process.exit(1);
+      }
+
+      const agent = new BrowserAgent({
+        llm,
+        debug,
+        browserProvider: "Local",
+      });
+
+      const page = await agent.newPage();
+      spinner.start(`Replaying plan from ${file}`);
+
+      await agent.replay(file, {
+        page,
+        aiFallback,
+        startingUrl,
+        onStep: (action, output) => {
+          const label = agent.pprintAction({
+            type: action.type,
+            params: action.params as object,
+          });
+          spinner.succeed(
+            `[${chalk.yellow(action.type)}] ${label || output.message}`
+          );
+          spinner.start("Continuing replay...");
+        },
+        onError: (action, err) => {
+          spinner.fail(
+            `[${chalk.red(action.type)}] ${err.message}`
+          );
+          return "abort";
+        },
+      });
+
+      spinner.succeed(chalk.green("Replay complete."));
+
+      const shouldExit = await inquirer.confirm({
+        message: "Close browser and exit?",
+        default: true,
+      });
+      if (shouldExit) {
+        await agent.closeAgent();
+        process.exit(0);
+      }
+    } catch (err) {
+      spinner.stop();
+      if (err instanceof BrowserAgentError || err instanceof Error) {
+        console.log(chalk.red(err.message));
+        if (debug) {
+          console.trace(err);
+        }
+      } else {
+        console.log(chalk.red(String(err)));
+      }
+      process.exit(1);
     }
   });
 

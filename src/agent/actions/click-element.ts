@@ -2,7 +2,7 @@ import { z } from "zod";
 import { Locator } from "playwright";
 import { ActionContext, ActionOutput, AgentActionDefinition } from "@/types";
 import { sleep } from "@/utils";
-import { getLocator } from "./utils";
+import { resolveLocator } from "./utils";
 
 const ClickElementAction = z
   .object({
@@ -23,14 +23,19 @@ export const ClickElementActionDefinition: AgentActionDefinition = {
     action: ClickElementActionType
   ): Promise<ActionOutput> {
     const { index } = action;
-    const locator = getLocator(ctx, index);
-    if (!locator) {
+    const resolved = resolveLocator(ctx, index);
+    if (!resolved) {
       return { success: false, message: "Element not found" };
     }
+    const { locator, resolved: resolvedLocator } = resolved;
 
     const exists = (await locator.count()) > 0;
     if (!exists) {
-      return { success: false, message: "Element not found on page" };
+      return {
+        success: false,
+        message: "Element not found on page",
+        resolvedLocator,
+      };
     }
 
     await locator.scrollIntoViewIfNeeded({
@@ -47,7 +52,11 @@ export const ClickElementActionDefinition: AgentActionDefinition = {
     ]);
 
     await locator.click({ force: true });
-    return { success: true, message: `Clicked element with index ${index}` };
+    return {
+      success: true,
+      message: `Clicked element with index ${index}`,
+      resolvedLocator,
+    };
   },
   pprintAction: function (params: ClickElementActionType): string {
     return `Click element at index ${params.index}`;

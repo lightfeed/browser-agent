@@ -130,12 +130,21 @@ const getActionSchemaFlat = (actions: Array<AgentActionDefinition>) => {
     for (const [key, schema] of Object.entries(shape)) {
       if (!mergedParams[key]) {
         let base = schema as z.ZodTypeAny;
+        // Unwrap any existing Optional/Nullable so we control the final
+        // combination ourselves. OpenAI's strict structured outputs require
+        // every field to be listed in `required`, but allow the value to be
+        // `null` to emulate optional — hence `.nullable().optional()`.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if ((base as any)._def?.typeName === "ZodNullable") {
+        while (
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (base as any)._def?.typeName === "ZodOptional" ||
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (base as any)._def?.typeName === "ZodNullable"
+        ) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           base = (base as any)._def.innerType;
         }
-        mergedParams[key] = base.optional();
+        mergedParams[key] = base.nullable().optional();
       }
     }
   }
@@ -260,6 +269,15 @@ export const runAgentTask = async (
 
   let output = "";
   const page = taskState.startingPage;
+  let startingUrl: string | undefined;
+  try {
+    const url = page.url();
+    if (url && url !== "about:blank") {
+      startingUrl = url;
+    }
+  } catch {
+    // page may be closed or otherwise unavailable; skip
+  }
   let currStep = 0;
   while (true) {
     // Status Checks
@@ -413,6 +431,7 @@ export const runAgentTask = async (
     status: taskState.status,
     steps: taskState.steps,
     output,
+    startingUrl,
   };
   if (ctx.debug) {
     fs.writeFileSync(

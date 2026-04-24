@@ -24,6 +24,37 @@ import {
 import { BrowserAgentError } from "@/agent/error";
 
 /**
+ * Dynamically load a provider SDK and surface a clear, actionable error if
+ * it's missing. The provider packages are declared as
+ * `optionalDependencies`, so they normally ship with the CLI — but a user
+ * who ran `npm install --omit=optional` (or whose install was interrupted)
+ * may not have them. In that case, tell them exactly which package to
+ * install instead of printing a raw `MODULE_NOT_FOUND` stack.
+ */
+async function loadProvider<T>(
+  packageName: string,
+  providerLabel: string
+): Promise<T> {
+  try {
+    return (await import(packageName)) as T;
+  } catch (err) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const code = (err as any)?.code;
+    if (code === "ERR_MODULE_NOT_FOUND" || code === "MODULE_NOT_FOUND") {
+      console.error(
+        chalk.red(
+          `${providerLabel} provider is not installed.\n` +
+            `Install it and retry:\n\n` +
+            `  npm install -g ${packageName}\n`
+        )
+      );
+      process.exit(1);
+    }
+    throw err;
+  }
+}
+
+/**
  * Select an LLM based on environment variables. Providers are checked in
  * priority order: OpenAI, Google, Anthropic. Per-provider model is
  * configurable via `*_MODEL` env vars. Dynamic imports keep unused provider
@@ -31,7 +62,9 @@ import { BrowserAgentError } from "@/agent/error";
  */
 async function createDefaultLlm(): Promise<BaseChatModel | undefined> {
   if (process.env.OPENAI_API_KEY) {
-    const { ChatOpenAI } = await import("@langchain/openai");
+    const { ChatOpenAI } = await loadProvider<
+      typeof import("@langchain/openai")
+    >("@langchain/openai", "OpenAI");
     return new ChatOpenAI({
       apiKey: process.env.OPENAI_API_KEY,
       model: process.env.OPENAI_MODEL ?? "gpt-4.1-mini",
@@ -39,7 +72,9 @@ async function createDefaultLlm(): Promise<BaseChatModel | undefined> {
     }) as unknown as BaseChatModel;
   }
   if (process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY) {
-    const { ChatGoogleGenerativeAI } = await import("@langchain/google-genai");
+    const { ChatGoogleGenerativeAI } = await loadProvider<
+      typeof import("@langchain/google-genai")
+    >("@langchain/google-genai", "Google Gemini");
     return new ChatGoogleGenerativeAI({
       apiKey: process.env.GOOGLE_API_KEY ?? process.env.GEMINI_API_KEY,
       model: process.env.GEMINI_MODEL ?? "gemini-2.5-flash",
@@ -47,7 +82,9 @@ async function createDefaultLlm(): Promise<BaseChatModel | undefined> {
     }) as unknown as BaseChatModel;
   }
   if (process.env.ANTHROPIC_API_KEY) {
-    const { ChatAnthropic } = await import("@langchain/anthropic");
+    const { ChatAnthropic } = await loadProvider<
+      typeof import("@langchain/anthropic")
+    >("@langchain/anthropic", "Anthropic");
     return new ChatAnthropic({
       apiKey: process.env.ANTHROPIC_API_KEY,
       model:

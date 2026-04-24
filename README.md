@@ -1,5 +1,5 @@
 <h1 align="center">
-  Replayable Browser Agent ⚡️
+  Replayable Browser Agent
 </h1>
 
 <p align="center">
@@ -18,12 +18,14 @@
 
 ## Why
 
-Most browser-agent tasks split cleanly in two:
+Most browser-agent work has two parts:
 
 - **Navigation** — many clicks / types / scrolls to reach a target page. Most of the steps, most of the tokens, usually the same every run if the page structure is stable.
 - **Extraction** — pull typed data out of whatever is on screen. Must re-run AI each time because the content is live.
 
 `@lightfeed/browser-agent` lets you do navigation once with AI, save it as a plan, and **replay it with zero LLM calls**. Then run a cheap `.extract()` on the result page for the dynamic tail. If the DOM drifts, optional `aiFallback` re-plans only the broken step.
+
+Runs anywhere your browser lives — the same `BrowserAgent` API drives a **local** Chromium for dev, a **serverless** Chromium (AWS Lambda via `@sparticuz/chromium`) for scheduled jobs, or a **remote** CDP endpoint (Brightdata Scraping Browser, any browser farm, or your own). Swap backends by changing one config field; while prompts, plans, and `.extract()` calls stay identical.
 
 ## Install
 

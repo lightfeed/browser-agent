@@ -52,7 +52,7 @@ const page = await agent.newPage();
 
 // 1. AI navigation — recordable, replayable.
 const nav = await page.ai(
-  "Go to news.ycombinator.com, open the Show section, then click 'More' to go to the next page"
+  "Go to Hacker News show section, go to next page"
 );
 await agent.savePlan("hn show page 2", nav, "./hn.plan.json");
 
@@ -81,26 +81,6 @@ await agent.replay("./hn.plan.json", { page });   // zero tokens
 const { articles } = await page.extract(/* ... */); // tokens only here
 ```
 
-## `page.ai` vs `agent.executeTask` vs `agent.executeTaskAsync`
-
-All three drive the browser with AI, return the same `TaskOutput`, and can be recorded + replayed.
-
-| API                            | Use when                                                                                                                                                       |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `page.ai(task)`                | You already have a page and want to mix Playwright calls (`page.goto`, `page.clickElement`) with AI steps on the same tab. Resolves when done.                 |
-| `agent.executeTask(task)`      | "Here's a goal, figure it out." The agent owns the page; include URLs in the prompt and it navigates itself. Resolves when done.                               |
-| `agent.executeTaskAsync(task)` | Same as `executeTask` but returns a `Task` control handle immediately — `task.pause()`, `task.resume()`, `task.cancel()`, and per-step event callbacks. For long-running flows, CLIs, or anything a user can interrupt. |
-
-## Record & replay
-
-- `agent.savePlan(task, result, path)` writes a JSON plan with the action sequence and a stable `xpath` + `cssPath` for each clicked / typed element.
-- `agent.replay(path, { page })` re-runs those actions with no LLM calls, no screenshots, no DOM map.
-- `aiFallback: true` re-plans **only** a drifted step with the LLM; the rest stays free.
-- `startingUrl` (option, or `--url` on the CLI) retargets a plan at a different URL — useful for staging / preview deploys / different queries.
-- Plans are human-readable and hand-editable (tweak an `inputText` value, reorder or delete steps).
-
-> The `output` string the model produced while recording is frozen in the plan — replay does **not** regenerate it. If the value of the run is live content or fresh reasoning, keep that in a follow-up `.extract()` / `.ai()`, not inside the recorded plan.
-
 ## CLI
 
 Everything above is available without writing code:
@@ -108,16 +88,24 @@ Everything above is available without writing code:
 ```bash
 # Record while running
 browser-agent-cli run --save-plan ./hn.plan.json \
-  -c "Go to news.ycombinator.com, open the Show section, then click 'More' to go to the next page"
+  -c "Go to Hacker News show section, go to next page and find top 3 articles"
 
-# Replay (zero LLM calls)
+# Replay: deterministic navigation (no LLM), then one fresh AI pass on the
+# result page to produce an up-to-date final response. The navigation part
+# is free; only the final pass spends tokens.
 browser-agent-cli replay ./hn.plan.json
 
-# Self-heal drifted steps
-browser-agent-cli replay ./hn.plan.json --ai-fallback
+# Pure replay — skip the final AI pass and just get the browser onto the
+# result page (zero LLM calls end-to-end).
+browser-agent-cli replay ./hn.plan.json --no-ai-finish
 
-# Retarget at a different URL (e.g. start from the Ask section instead)
-browser-agent-cli replay ./hn.plan.json --url https://news.ycombinator.com/ask
+# Use a different finishing task (e.g. ask for a custom summary of the
+# current page instead of re-running the recorded task).
+browser-agent-cli replay ./hn.plan.json \
+  --finish-task "Return the titles of the first 3 posts as a bullet list"
+
+# Self-heal drifted steps during replay (independent of the finish pass).
+browser-agent-cli replay ./hn.plan.json --ai-fallback
 ```
 
 LLM auto-detected from `GOOGLE_API_KEY` / `GEMINI_API_KEY` → `OPENAI_API_KEY` → `ANTHROPIC_API_KEY`. Override the model with `--llm-model` or `GEMINI_MODEL` / `OPENAI_MODEL` / `ANTHROPIC_MODEL`. `replay` only needs an LLM with `--ai-fallback`. Interactive: `ctrl+p` pause, `ctrl+r` resume.
@@ -165,6 +153,26 @@ const agent = new BrowserAgent({
 });
 ```
 </details>
+
+## `page.ai` vs `agent.executeTask` vs `agent.executeTaskAsync`
+
+All three drive the browser with AI, return the same `TaskOutput`, and can be recorded + replayed.
+
+| API                            | Use when                                                                                                                                                       |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `page.ai(task)`                | You already have a page and want to mix Playwright calls (`page.goto`, `page.clickElement`) with AI steps on the same tab. Resolves when done.                 |
+| `agent.executeTask(task)`      | "Here's a goal, figure it out." The agent owns the page; include URLs in the prompt and it navigates itself. Resolves when done.                               |
+| `agent.executeTaskAsync(task)` | Same as `executeTask` but returns a `Task` control handle immediately — `task.pause()`, `task.resume()`, `task.cancel()`, and per-step event callbacks. For long-running flows, CLIs, or anything a user can interrupt. |
+
+## Record & replay
+
+- `agent.savePlan(task, result, path)` writes a JSON plan with the action sequence and a stable `xpath` + `cssPath` for each clicked / typed element.
+- `agent.replay(path, { page })` re-runs those actions with no LLM calls, no screenshots, no DOM map.
+- `aiFallback: true` re-plans **only** a drifted step with the LLM; the rest stays free.
+- `startingUrl` (option, or `--url` on the CLI) retargets a plan at a different URL — useful for staging / preview deploys / different queries.
+- Plans are human-readable and hand-editable (tweak an `inputText` value, reorder or delete steps).
+
+> The `output` string the model produced while recording is frozen in the plan — the programmatic `agent.replay()` does **not** regenerate it. The CLI's `replay` command, by default, runs one fresh AI pass (`page.ai(plan.task, { maxSteps: 3 })`) on the result page after navigation so every CLI run ends with an up-to-date response; pass `--no-ai-finish` to get pure token-free replay and fall back to the recorded output. If you're wiring this up programmatically, run your own `.extract()` / `.ai()` on the page after `agent.replay()` instead of relying on the recorded `output`.
 
 ## License
 

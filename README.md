@@ -36,35 +36,40 @@ npm install @lightfeed/browser-agent
 
 ## Example
 
-Find YC companies in the B2B Legal industry that are hiring now. Navigation (filter the directory) is the expensive-but-stable part; extraction is the live-data part.
+Go to the Hacker News Show section, click through to the next page, and grab the top 3 posts. Navigation (open Show, paginate) is the expensive-but-stable part; extraction is the live-data part.
 
 ```typescript
 import { BrowserAgent } from "@lightfeed/browser-agent";
-import { ChatOpenAI } from "@langchain/openai";
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { z } from "zod";
 
 const agent = new BrowserAgent({
   browserProvider: "Local",
-  llm: new ChatOpenAI({ model: "gpt-4.1-mini" }),
+  llm: new ChatGoogleGenerativeAI({ model: "gemini-2.5-flash" }),
 });
 
 const page = await agent.newPage();
 
 // 1. AI navigation — recordable, replayable.
 const nav = await page.ai(
-  "Find YC companies in B2B legal industry that are hiring now"
+  "Go to news.ycombinator.com, open the Show section, then click 'More' to go to the next page"
 );
-await agent.savePlan("yc b2b-legal hiring", nav, "./yc.plan.json");
+await agent.savePlan("hn show page 2", nav, "./hn.plan.json");
 
 // 2. AI extraction — typed by a Zod schema, runs AI every call.
-const { companies } = await page.extract(
-  "All companies currently shown",
+const { articles } = await page.extract(
+  "The top 3 articles on this page",
   z.object({
-    companies: z.array(z.object({
-      name: z.string(),
-      url: z.string(),
-      batch: z.string(),
-    })),
+    articles: z
+      .array(
+        z.object({
+          title: z.string(),
+          url: z.string(),
+          points: z.number(),
+          commentsUrl: z.string(),
+        })
+      )
+      .max(3),
   })
 );
 ```
@@ -72,8 +77,8 @@ const { companies } = await page.extract(
 Every subsequent run — navigation is free:
 
 ```typescript
-await agent.replay("./yc.plan.json", { page });   // zero tokens
-const { companies } = await page.extract(/* ... */); // tokens only here
+await agent.replay("./hn.plan.json", { page });   // zero tokens
+const { articles } = await page.extract(/* ... */); // tokens only here
 ```
 
 ## `page.ai` vs `agent.executeTask` vs `agent.executeTaskAsync`
@@ -102,17 +107,17 @@ Everything above is available without writing code:
 
 ```bash
 # Record while running
-browser-agent-cli run --save-plan ./yc.plan.json \
-  -c "Find YC companies in B2B legal industry that are hiring now"
+browser-agent-cli run --save-plan ./hn.plan.json \
+  -c "Go to news.ycombinator.com, open the Show section, then click 'More' to go to the next page"
 
 # Replay (zero LLM calls)
-browser-agent-cli replay ./yc.plan.json
+browser-agent-cli replay ./hn.plan.json
 
 # Self-heal drifted steps
-browser-agent-cli replay ./yc.plan.json --ai-fallback
+browser-agent-cli replay ./hn.plan.json --ai-fallback
 
-# Retarget at a different URL
-browser-agent-cli replay ./yc.plan.json --url https://staging.example.com/
+# Retarget at a different URL (e.g. start from the Ask section instead)
+browser-agent-cli replay ./hn.plan.json --url https://news.ycombinator.com/ask
 ```
 
 LLM auto-detected from `GOOGLE_API_KEY` / `GEMINI_API_KEY` → `OPENAI_API_KEY` → `ANTHROPIC_API_KEY`. Override the model with `--llm-model` or `GEMINI_MODEL` / `OPENAI_MODEL` / `ANTHROPIC_MODEL`. `replay` only needs an LLM with `--ai-fallback`. Interactive: `ctrl+p` pause, `ctrl+r` resume.

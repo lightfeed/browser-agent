@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ActionContext, AgentActionDefinition } from "@/types";
-import { getLocator } from "./utils";
+import { resolveLocator } from "./utils";
 
 export const SelectOptionAction = z
   .object({
@@ -18,14 +18,16 @@ export const SelectOptionActionDefinition: AgentActionDefinition = {
   actionParams: SelectOptionAction,
   run: async (ctx: ActionContext, action: SelectOptionActionType) => {
     const { index, text } = action;
-    const locator = getLocator(ctx, index);
-    if (!locator) {
+    const resolved = resolveLocator(ctx, index);
+    if (!resolved) {
       return { success: false, message: "Element not found" };
     }
+    const { locator, resolved: resolvedLocator } = resolved;
     await locator.selectOption({ label: text });
     return {
       success: true,
       message: `Selected option "${text}" from element with index ${index}`,
+      resolvedLocator,
     };
   },
   pprintAction: function (params: SelectOptionActionType): string {

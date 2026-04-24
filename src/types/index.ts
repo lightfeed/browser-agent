@@ -5,6 +5,7 @@ import {
   AgentActionDefinition,
   ActionContext,
   ActionOutput,
+  ResolvedLocator,
 } from "./agent/actions/types";
 
 // Agent Types
@@ -19,6 +20,11 @@ import {
   TaskState,
   TokenUsage,
   endTaskStatuses,
+  PlannedAction,
+  AgentPlan,
+  ReplayOptions,
+  AgentPage,
+  AgentVariable,
 } from "./agent/types";
 
 // Config Types
@@ -37,6 +43,7 @@ export {
   AgentActionDefinition,
   ActionContext,
   ActionOutput,
+  ResolvedLocator,
 
   // Agent Types
   AgentOutputFn,
@@ -48,6 +55,11 @@ export {
   TaskStatus,
   TaskState,
   TokenUsage,
+  PlannedAction,
+  AgentPlan,
+  ReplayOptions,
+  AgentPage,
+  AgentVariable,
 
   // Config Types
   BrowserAgentConfig,

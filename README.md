@@ -33,7 +33,7 @@ npm install @lightfeed/browser-agent
 
 ## Example
 
-Find YC companies in Real Estate & Construction that are hiring. Navigation (filter the directory) is the expensive-but-stable part; extraction is the live-data part.
+Find YC companies in the B2B Legal industry that are hiring now. Navigation (filter the directory) is the expensive-but-stable part; extraction is the live-data part.
 
 ```typescript
 import { BrowserAgent } from "@lightfeed/browser-agent";
@@ -49,11 +49,9 @@ const page = await agent.newPage();
 
 // 1. AI navigation — recordable, replayable.
 const nav = await page.ai(
-  "Go to https://ycombinator.com/companies, " +
-  "filter by industry 'Real Estate and Construction', " +
-  "and turn on the 'Is Hiring' filter"
+  "Find YC companies in B2B legal industry that are hiring now"
 );
-await agent.savePlan("yc real-estate hiring", nav, "./yc.plan.json");
+await agent.savePlan("yc b2b-legal hiring", nav, "./yc.plan.json");
 
 // 2. AI extraction — typed by a Zod schema, runs AI every call.
 const { companies } = await page.extract(
@@ -102,7 +100,7 @@ Everything above is available without writing code:
 ```bash
 # Record while running
 browser-agent-cli run --save-plan ./yc.plan.json \
-  -c "Go to https://ycombinator.com/companies, filter by Real Estate and Construction, enable Is Hiring"
+  -c "Find YC companies in B2B legal industry that are hiring now"
 
 # Replay (zero LLM calls)
 browser-agent-cli replay ./yc.plan.json

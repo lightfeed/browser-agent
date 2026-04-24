@@ -1,13 +1,15 @@
 import { BrowserAgent } from "../src/agent";
 import dotenv from "dotenv";
 import { ChatOpenAI } from "@langchain/openai";
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 
 dotenv.config();
 
 const agent = new BrowserAgent({
-  llm: new ChatOpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-    model: "gpt-4.1-mini",
+  llm: new ChatGoogleGenerativeAI({
+    apiKey: process.env.GOOGLE_API_KEY,
+    model: "gemini-2.5-flash",
+    temperature: 0.0,
   }),
   browserProvider: "Local",
   debug: true,
@@ -15,11 +17,13 @@ const agent = new BrowserAgent({
 
 (async () => {
   const page = await agent.newPage();
-  await page.goto("https://www.loblaws.ca/en/food/bakery/bread/c/28251");
+  await page.goto("https://www.ycombinator.com/companies");
   try {
     await page.waitForLoadState("networkidle", { timeout: 10000 });
   } catch {
     console.log("Network idle timeout, continuing...");
   }
-  page.ai("Find pagination links and go to the next page", { maxSteps: 2 });
+  page.ai("Find YC companies in B2B legal industry that are hiring now", {
+    maxSteps: 5,
+  });
 })();

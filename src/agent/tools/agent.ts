@@ -131,9 +131,9 @@ const getActionSchemaFlat = (actions: Array<AgentActionDefinition>) => {
       if (!mergedParams[key]) {
         let base = schema as z.ZodTypeAny;
         // Unwrap any existing Optional/Nullable so we control the final
-        // combination ourselves. OpenAI's strict structured outputs require
-        // every field to be listed in `required`, but allow the value to be
-        // `null` to emulate optional — hence `.nullable().optional()`.
+        // combination ourselves. Gemini's tool schema does not support
+        // `type: ["X", "null"]` unions (produced by `.nullable()`) nor
+        // `anyOf`, so we only mark params as `.optional()`.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         while (
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -144,7 +144,7 @@ const getActionSchemaFlat = (actions: Array<AgentActionDefinition>) => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           base = (base as any)._def.innerType;
         }
-        mergedParams[key] = base.nullable().optional();
+        mergedParams[key] = base.optional();
       }
     }
   }

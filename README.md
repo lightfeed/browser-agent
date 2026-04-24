@@ -3,7 +3,7 @@
 </h1>
 
 <p align="center">
-  <strong>AI drives the browser once. Replay the navigation without AI.</strong>
+  <strong>TypeScript browser agent library. AI drives the browser once — replay the navigation with zero LLM tokens.</strong>
 </p>
 
 <div align="center">
@@ -18,14 +18,16 @@
 
 ## Why
 
+`@lightfeed/browser-agent` is a TypeScript library for building browser agents whose main value prop is **cutting LLM tokens on every rerun**.
+
 Most browser-agent work has two parts:
 
-- **Navigation** — many clicks / types / scrolls to reach a target page. Most of the steps, most of the tokens, usually the same every run if the page structure is stable.
+- **Navigation** — many clicks / types / scrolls to reach a target page. Most of the steps, most of the tokens, usually the same every run if the page structure is stable. Today's agents pay for these tokens *every single time*.
 - **Extraction** — pull typed data out of whatever is on screen. Must re-run AI each time because the content is live.
 
-`@lightfeed/browser-agent` lets you do navigation once with AI, save it as a plan, and **replay it with zero LLM calls**. Then run a cheap `.extract()` on the result page for the dynamic tail. If the DOM drifts, optional `aiFallback` re-plans only the broken step.
+This library lets you run navigation once with AI, save it as a plan, and **replay it with zero LLM calls** — no screenshots, no DOM map, no tokens. Then run a cheap `.extract()` on the result page for the dynamic tail. If the DOM drifts, optional `aiFallback` re-plans **only the broken step**, so you still pay tokens for a fraction of the flow instead of all of it.
 
-Runs anywhere your browser lives — the same `BrowserAgent` API drives a **local** Chromium for dev, a **serverless** Chromium (AWS Lambda via `@sparticuz/chromium`) for scheduled jobs, or a **remote** CDP endpoint (Brightdata Scraping Browser, any browser farm, or your own). Swap backends by changing one config field; while prompts, plans, and `.extract()` calls stay identical.
+Runs anywhere your browser lives — the same `BrowserAgent` API drives a **local** Chromium for dev, a **serverless** Chromium (AWS Lambda via `@sparticuz/chromium`) for scheduled jobs, or a **remote** CDP endpoint (Brightdata Scraping Browser, any browser farm, or your own). Swap backends by changing one config field; prompts, plans, and `.extract()` calls stay identical.
 
 ## Install
 

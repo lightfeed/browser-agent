@@ -1,9 +1,9 @@
 <h1 align="center">
-  Serverless Browser Agent ⚡️
+  Replayable Browser Agent ⚡️
 </h1>
 
 <p align="center">
-  <strong>AI-driven browser automation with deterministic, zero-token replay for repeatable workflows</strong>
+  <strong>AI drives the browser once. Replay the navigation forever for free. Run AI only on the parts that actually change.</strong>
 </p>
 
 <div align="center">
@@ -16,14 +16,42 @@
     <img src="https://img.shields.io/github/license/lightfeed/browser-agent" alt="License" /></a>
 </div>
 
-`@lightfeed/browser-agent` lets an LLM drive a real browser to complete tasks from natural-language prompts — and, uniquely, lets you **record the navigation as a plan and replay it with zero LLM calls**. Use AI to figure out _how_ to reach a page once, then replay the deterministic click/type/scroll sequence forever after. Pair it with a cheap follow-up `.extract()` or `.ai()` when you need fresh AI output on each run, and rely on optional self-healing AI fallback when a recorded selector drifts.
+`@lightfeed/browser-agent` is a browser automation library with a hard split between **AI navigation** (figure out how to reach a page — recordable, replayable, zero-token on repeat) and **AI content** (extract structured data or summarise live content — runs AI on every call). Use `.ai()` once to discover the click / type / scroll sequence, save it as JSON, replay it deterministically forever. Pair it with `.extract()` when the value of the run is fresh data, not navigation.
+
+## The mental model
+
+```
+┌─────────────────────────────┐   ┌──────────────────────────────┐
+│  page.ai(task)              │   │  page.extract(obj, schema)   │
+│                             │   │                              │
+│  "Get the browser somewhere"│   │  "Pull typed data from       │
+│                             │   │   whatever is on screen"     │
+│  • clicks, types, scrolls   │   │                              │
+│  • recordable → plan.json   │   │  • pure function of          │
+│  • replay = zero tokens     │   │    (current page, schema)    │
+│  • self-healing optional    │   │  • runs LLM every call       │
+│                             │   │  • NOT recordable            │
+└─────────────────────────────┘   └──────────────────────────────┘
+         ▲                                       ▲
+         │                                       │
+   structural / repeatable              content / changes every run
+```
+
+Everything else in the library follows from this split:
+
+- **`.ai()` is navigation.** It is not a reasoning primitive. Its job is to get the page into a state. Do not expect its `output` string to carry fresh AI analysis on replay — that text is a record of what the model said the first time and will not be regenerated.
+- **`.extract()` is content.** It looks at the current page and returns typed data via a Zod schema. It does not drive the browser, loop, or paginate.
+- **Multi-page / cross-page reasoning is composition**, not a third primitive. Loop in your own code: navigate with `.ai()`, extract with `.extract()`, aggregate in TypeScript.
+
+This is the whole product in one picture. The rest of the README is mechanics.
 
 ## Highlights
 
-- **Record & replay for zero-token navigation** — run `.ai()` once, save the resolved action sequence as JSON, replay the clicks/types/scrolls with no model calls, no screenshots, no DOM map. Then run a cheap `.extract()` / `.ai()` for the dynamic tail if you need fresh AI output.
+- **Record & replay for zero-token navigation** — run `.ai()` once, save the resolved action sequence as JSON, replay the clicks / types / scrolls with no model calls, no screenshots, no DOM map.
+- **Typed `.extract()` for live content** — returns data shaped by a Zod schema. Runs on whatever is on the page right now.
+- **Clean composition for multi-page workflows** — deterministic `.ai()` hops + per-page `.extract()` + aggregation in your own code.
 - **Self-healing replay** — `aiFallback: true` transparently re-plans only the step that drifted, so small DOM changes don't nuke an entire workflow.
 - **Fine-grained deterministic primitives** — `page.clickElement`, `inputText`, `scrollDirection`, `keyPress`, `navigateTo`, etc., alongside `page.ai` / `page.extract`.
-- **AI-first when you need it** — `.ai()` plans actions from a screenshot + interactive-element map; `.extract()` returns structured data typed by a Zod schema.
 - **Runs anywhere a browser does** — local Chrome, any remote CDP endpoint, or serverless (AWS Lambda via `@sparticuz/chromium`).
 - **Batteries-included CLI** — `browser-agent-cli` runs tasks, records plans, and replays them without writing a single line of code; auto-detects your LLM from env vars.
 
@@ -48,10 +76,12 @@ const agent = new BrowserAgent({
 const page = await agent.newPage();
 await page.goto("https://news.ycombinator.com/");
 
-// Let the LLM drive the page to complete a task.
+// Navigation: let the LLM drive the page to the state you want.
+//             Recordable, replayable, free on replay.
 await page.ai("Click the 'new' link to go to the newest stories page");
 
-// Or extract structured data using a Zod schema.
+// Content: extract typed data from whatever is on screen right now.
+//          Runs AI on every call.
 const { posts } = await page.extract(
   "The top 3 stories on this page",
   z.object({
@@ -60,7 +90,63 @@ const { posts } = await page.extract(
 );
 ```
 
-> **Does `page.ai` require `page.goto` first?** No. The agent has a built-in `goToUrl` action, so if your prompt contains a URL (`"Go to https://... and do X"`) it will navigate itself. The typical patterns are either (1) `page.goto(url)` then a `page.ai(task)` about the current page, or (2) include the URL inside the prompt. Starting on `about:blank` with no URL anywhere will make the agent flail.
+> **Does `page.ai` require `page.goto` first?** No. The agent has a built-in `goToUrl` action, so if your prompt contains a URL (`"Go to https://... and do X"`) it will navigate itself. The typical patterns are either (1) `page.goto(url)` then `page.ai(task)` about the current page, or (2) include the URL inside the prompt. Starting on `about:blank` with no URL anywhere will make the agent flail.
+
+## `.ai()` is for navigation, not reasoning
+
+If your prompt is `"Summarise the top 3 articles on HN"`, `.ai()` is the wrong tool — or at least not the whole answer. `.ai()` can click and scroll its way to a result page, but its final answer text is:
+
+1. **Not typed** — it's a free-form string inside the `complete` action.
+2. **Not replayable** — replay re-runs the recorded clicks, not the LLM, so the frozen text is whatever the model said at record time.
+3. **Not reusable as structured data** — downstream code has to parse a string.
+
+The right shape for that task is: `.ai()` to get to the page, `.extract()` (with a Zod schema) to produce the summary. You now have typed output, you can record the navigation once, and replay only re-runs the AI on the part that actually depends on live content.
+
+**Rule of thumb:** if the value of the run is getting somewhere, it's `.ai()`. If the value of the run is what's on the page *today*, it's `.extract()`.
+
+## Multi-page / cross-page extraction
+
+The library deliberately does not have a "do a reasoning task across N pages" primitive, because the navigation inside that kind of task (how many pages, which links to open, when to stop) is data-dependent and cannot be frozen into a replayable plan. Instead, compose:
+
+```typescript
+import { z } from "zod";
+
+const Story = z.object({ title: z.string(), url: z.string(), points: z.number() });
+
+const all: z.infer<typeof Story>[] = [];
+
+for (let i = 0; i < 5; i++) {
+  // Per-page AI extract — runs every call, typed by the schema.
+  const { stories } = await page.extract(
+    "All stories on this page",
+    z.object({ stories: z.array(Story) })
+  );
+  all.push(...stories);
+
+  // Navigation hop — recordable. If pagination layout is stable, this
+  // is replayable for free; if it's data-dependent ("keep going until
+  // no next button"), keep it AI-driven.
+  const done = await page.$("a.morelink").then((el) => !el);
+  if (done) break;
+  await page.ai("Click the 'More' link to load the next page");
+}
+
+// Aggregate / re-rank in plain TypeScript.
+const top3 = all.sort((a, b) => b.points - a.points).slice(0, 3);
+```
+
+What you get from this shape:
+
+- Every `.ai()` hop is a discrete, recordable action you can save to a plan.
+- Every `.extract()` call is a pure function of (current page, schema) — easy to test, easy to mock, easy to reason about.
+- Aggregation is TypeScript, not a prompt. No tokens, full type safety, no "trust the LLM to sort correctly."
+
+If you need the model itself to synthesise across pages (e.g. write a summary that references all of them), do one final `.extract()` over the concatenated, already-typed data — it's a tiny prompt at that point, not a full browser loop.
+
+### What you don't need
+
+- **A "notes" / scratchpad primitive inside `.ai()`.** `.ai()` already carries a lightweight `memory` field across its own steps for navigation bookkeeping ("I dismissed the cookie banner"). That's enough. Typed intermediate data belongs in `.extract()`'s return value and your own variables, where TypeScript and Zod can actually help.
+- **`.extract()` driving the browser.** Keeping `.extract()` a pure function of the current page is what makes it replay-safe: replay navigates for free, then `.extract()` runs AI on whatever is actually there today.
 
 ## CLI
 
@@ -68,7 +154,7 @@ A ready-to-use CLI ships with the package — no code required. Install globally
 
 ```bash
 # One-off task (will open a local Chrome window)
-browser-agent-cli run -c "Go to https://news.ycombinator.com and summarise the top 3 stories"
+browser-agent-cli run -c "Go to https://news.ycombinator.com and open the newest stories page"
 
 # Read the task from a file
 browser-agent-cli run -f ./task.txt
@@ -110,15 +196,15 @@ browser-agent-cli run -d -c "..."
 | `replay` | `-u, --url <url>`          | Retarget the plan at a different starting URL (e.g. staging or a preview deploy).    |
 | `replay` | `-d, --debug`              | Enable verbose debug output.                                                         |
 
-## Record and Replay (the main differentiator)
+## Record and Replay
 
 Every `.ai()` call costs tokens because the model plans actions off a screenshot plus an interactive-element map. For **repeatable browser navigation** you can record the plan once and replay it for free.
 
 > **What replay does:** re-executes the recorded browser **actions** (click, type, scroll, navigate, select, keypress) against today's page, using the stable selectors captured at record time.
 >
-> **What replay does NOT do:** re-run the LLM. Any content the model _generated_ during recording — a summary, a decision, a reasoned answer — is frozen as the plan's `output` and will not be regenerated. If your task's value is AI reasoning over live content, replay is only useful for the navigation prefix.
+> **What replay does NOT do:** re-run the LLM. Any content the model _generated_ during recording — a summary, a decision, a reasoned answer — is frozen as the plan's `output` and will not be regenerated. **That's not a bug, that's the split.** If your task's value is AI reasoning over live content, put that part in a follow-up `.extract()` / `.ai()` call, not inside the recorded plan.
 
-**Use replay when** the value is getting the browser into a particular state — login flows, form fills, multi-step navigation to a results page, scheduled/CI automations.
+**Use replay when** the value is getting the browser into a particular state — login flows, form fills, multi-step navigation to a results page, scheduled / CI automations.
 
 **Use the "replay then extract" pattern when** the value is fresh data or AI reasoning on each run:
 
@@ -243,7 +329,7 @@ Plans are human-readable and safe to hand-edit — point `startingUrl` at stagin
 | `task`             | The original natural-language task. Used for the `aiFallback` prompt unless `aiFallbackTask` is provided.                                                 |
 | `createdAt`        | ISO-8601 timestamp when the plan was saved.                                                                                                               |
 | `startingUrl`      | URL the recording page was on when the task started, captured automatically. Replay navigates here before step 0. **Optional** — absent when the recording started on `about:blank` (in which case the first step is itself a `goToUrl` and handles navigation). Override at replay time via `ReplayOptions.startingUrl` or `--url`. |
-| `output`           | The LLM's final answer from the recording run, if any. Informational only; not used at replay time.                                                       |
+| `output`           | The LLM's final answer from the recording run, if any. Informational only; not used at replay time. Do not rely on this for fresh reasoning — use a follow-up `.extract()`. |
 | `steps[]`          | Flat list of action-level steps — a single recorded `.ai()` call can produce multiple steps.                                                              |
 | `steps[].type`     | Action name: `goToUrl`, `clickElement`, `inputText`, `selectOptionByText`, `scrollDirection`, `keyPress`, `back`, `forward`, `refresh`, custom action, …  |
 | `steps[].params`   | Action-specific params. For recorded element-targeting actions this includes `index` — meaningful only at record time; replay uses `resolvedLocator`.     |
@@ -272,7 +358,7 @@ Targets accept either a Playwright selector string (CSS or `xpath=...`) or a `Re
 
 ## `page.ai` vs `agent.executeTask`
 
-Two programmatic entry points for AI-driven tasks:
+Two programmatic entry points for AI-driven navigation:
 
 | API                        | When to use                                                                                                                   |
 | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
@@ -288,6 +374,8 @@ const result = await agent.executeTask(
 );
 await agent.savePlan("open HN newest", result, "./hn-newest.plan.json");
 ```
+
+Same rule as before: if the goal is "get somewhere", either of these is fine. If the goal is "tell me what's there", chain a `.extract()`.
 
 ## Browser providers
 
